@@ -25,6 +25,7 @@ import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
+import net.minestom.server.event.Event;
 import net.minestom.server.event.EventFilter;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.entity.EntityAttackEvent;
@@ -43,18 +44,21 @@ import net.minestom.server.timer.TaskSchedule;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jglrxavpok.hephaistos.nbt.NBTException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 
 import static dev.emortal.minestom.parkourtag.ParkourTagModule.SPAWN_POSITION_MAP;
 
 public class ParkourTagGame extends Game {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(ParkourTagGame.class);
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
 
     private static final Pos SPAWN_POINT = new Pos(0.5, 65.0, 0.5);
@@ -76,9 +80,9 @@ public class ParkourTagGame extends Game {
             .build();
 
 
-    public static int MIN_PLAYERS = 2;
+    public static final int MIN_PLAYERS = 2;
 
-    private static List<String> DEATH_MESSAGES = List.of(
+    private static final List<String> DEATH_MESSAGES = List.of(
             "<victim> was found by <tagger>",
             "<victim> failed the jump",
             "<tagger> was too fast for <victim>",
@@ -94,45 +98,59 @@ public class ParkourTagGame extends Game {
 
 
     private @NotNull Instance instance;
-    EventNode<InstanceEvent> eventNode;
+    private EventNode<InstanceEvent> eventNode;
     private @NotNull Set<Player> players = Sets.newConcurrentHashSet();
     private Audience audience = Audience.audience(players);
 
     private Task gameBeginTask;
     private BossBar bossBar = BossBar.bossBar(Component.empty(), 0f, BossBar.Color.PINK, BossBar.Overlay.PROGRESS);
 
-
     private @Nullable Task gameTimerTask;
 
-    protected ParkourTagGame(@NotNull GameCreationInfo creationInfo) {
+    protected ParkourTagGame(@NotNull GameCreationInfo creationInfo, @NotNull EventNode<Event> parentEventNode) {
         super(creationInfo);
+        EventNode<Event> gameEventNode = EventNode.all(UUID.randomUUID().toString());
+        parentEventNode.addChild(gameEventNode);
 
-        instance = createInstance();
-        eventNode = instance.eventNode();
+        CompletableFuture<Void> worldLoadFuture = CompletableFuture.runAsync(() -> {
+            this.instance = this.createInstance();
+        });
 
-        // TODO: event node needed here
-        MinecraftServer.getGlobalEventHandler().addListener(PlayerLoginEvent.class, e -> {
-            if (!creationInfo.playerIds().contains(e.getPlayer().getUuid())) {
-                e.getPlayer().kick("Unexpected join (" + Environment.getHostname() + ")");
+        parentEventNode.addListener(PlayerLoginEvent.class, event -> {
+            worldLoadFuture.join();
+
+            Player player = event.getPlayer();
+            if (!creationInfo.playerIds().contains(event.getPlayer().getUuid())) {
+                player.kick("Unexpected join (" + Environment.getHostname() + ")");
+                LOGGER.info("Unexpected join for player {}", player.getUuid());
                 return;
             }
 
-            e.getPlayer().setRespawnPoint(SPAWN_POINT);
-            e.setSpawningInstance(instance);
-            players.add(e.getPlayer());
+            player.setRespawnPoint(SPAWN_POINT);
+            event.setSpawningInstance(this.instance);
+            this.players.add(player);
 
-            e.getPlayer().setAutoViewable(true);
-            e.getPlayer().setTeam(null);
-            e.getPlayer().setGlowing(false);
-            e.getPlayer().setGameMode(GameMode.ADVENTURE);
-            e.getPlayer().showBossBar(bossBar);
-        });
-        MinecraftServer.getGlobalEventHandler().addListener(PlayerDisconnectEvent.class, e -> {
-            players.remove(e.getPlayer());
-            checkPlayerCounts();
+            player.setAutoViewable(true);
+            player.setTeam(null);
+            player.setGlowing(false);
+            player.setGameMode(GameMode.ADVENTURE);
+            player.showBossBar(this.bossBar);
         });
 
-        gameBeginTask = instance.scheduler().submitTask(new Supplier<>() {
+        worldLoadFuture.join();
+
+        this.eventNode = this.instance.eventNode();
+        // world loading takes some time so players might have already joined
+//        for (Player player : this.players) {
+//            player.setInstance(this.instance, SPAWN_POINT);
+//        }
+
+        // TODO: event node needed here
+        MinecraftServer.getGlobalEventHandler().addListener(PlayerDisconnectEvent.class, event -> {
+            if (this.players.remove(event.getPlayer())) this.checkPlayerCounts();
+        });
+
+        this.gameBeginTask = this.instance.scheduler().submitTask(new Supplier<>() {
             int i = 10;
 
             @Override
@@ -156,23 +174,25 @@ public class ParkourTagGame extends Game {
     }
 
     private Instance createInstance() {
+        LOGGER.info("Loading instance for game");
         InstanceContainer instance = MinecraftServer.getInstanceManager().createInstanceContainer();
-        instance.enableAutoChunkLoad(false);
         instance.setTimeRate(0);
         instance.setTimeUpdate(null);
 
+        LOGGER.info("Setting chunk loader");
         try {
             instance.setChunkLoader(new TNTLoader(new FileTNTSource(Path.of("city.tnt"))));
         } catch (IOException | NBTException e) {
             throw new RuntimeException(e);
         }
+        LOGGER.info("Returning instance for game");
 
-        int chunkRadius = 5;
-        for (int x = -chunkRadius; x < chunkRadius; x++) {
-            for (int y = -chunkRadius; y < chunkRadius; y++) {
-                instance.loadChunk(x, y);
-            }
-        }
+//        int chunkRadius = 5;
+//        for (int x = -chunkRadius; x < chunkRadius; x++) {
+//            for (int y = -chunkRadius; y < chunkRadius; y++) {
+//                instance.loadChunk(x, y);
+//            }
+//        }
 
         return instance;
     }
@@ -213,7 +233,7 @@ public class ParkourTagGame extends Game {
     private void pickTagger() {
         ThreadLocalRandom random = ThreadLocalRandom.current();
 
-        instance.scheduler().submitTask(new Supplier<>() {
+        this.instance.scheduler().submitTask(new Supplier<>() {
             int nameIter = 15;
             int offset = random.nextInt(players.size());
 
@@ -305,7 +325,7 @@ public class ParkourTagGame extends Game {
         }
 
 
-        instance.eventNode().addListener(EntityAttackEvent.class, e -> {
+        this.instance.eventNode().addListener(EntityAttackEvent.class, e -> {
             if (e.getEntity().getUuid() != tagger.getUuid()) return;
             if (e.getEntity().getEntityType() != EntityType.PLAYER) return;
             if (e.getTarget().getEntityType() != EntityType.PLAYER) return;
@@ -315,7 +335,6 @@ public class ParkourTagGame extends Game {
 
             if (attacker.getGameMode() != GameMode.ADVENTURE) return;
             if (target.getGameMode() != GameMode.ADVENTURE) return;
-
 
             attacker.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_PLING, Sound.Source.MASTER, 1f, 1f), Sound.Emitter.self());
             target.showTitle(
@@ -358,7 +377,7 @@ public class ParkourTagGame extends Game {
     }
 
     private void beginTimer() {
-        gameTimerTask = instance.scheduler().submitTask(new Supplier<>() {
+        this.gameTimerTask = instance.scheduler().submitTask(new Supplier<>() {
             final int startingSecondsLeft = 60; // TODO: Make this dynamic
             int secondsLeft = startingSecondsLeft;
 
@@ -391,7 +410,7 @@ public class ParkourTagGame extends Game {
                     );
                 }
 
-                bossBar.progress((float)secondsLeft / (float)startingSecondsLeft);
+                bossBar.progress((float) secondsLeft / (float) startingSecondsLeft);
 
                 secondsLeft--;
                 return TaskSchedule.seconds(1);
@@ -449,8 +468,8 @@ public class ParkourTagGame extends Game {
 
     @Override
     public @NotNull Set<UUID> getPlayers() {
-        Set<UUID> uuids = Sets.newConcurrentHashSet();
-        for (Player player : players) {
+        Set<UUID> uuids = new HashSet<>();
+        for (Player player : this.players) {
             uuids.add(player.getUuid());
         }
         return uuids;
@@ -458,7 +477,7 @@ public class ParkourTagGame extends Game {
 
     public @NotNull Set<Player> getGoons() {
         Set<Player> goons = Sets.newConcurrentHashSet();
-        for (Player player : players) {
+        for (Player player : this.players) {
             if (player.getTeam() == null) continue;
             if (player.getTeam().getTeamName().equals(GOONS_TEAM.getTeamName())) {
                 goons.add(player);
@@ -466,6 +485,7 @@ public class ParkourTagGame extends Game {
         }
         return goons;
     }
+
     public @NotNull Set<Player> getTaggers() {
         Set<Player> goons = Sets.newConcurrentHashSet();
         for (Player player : players) {
@@ -479,18 +499,18 @@ public class ParkourTagGame extends Game {
     // TODO rework cancel system
     @Override
     public void cancel() {
+        LOGGER.warn("Game cancelled");
         destroy();
     }
 
     public void destroy() {
-        System.out.println("game cancelled");
 
         // TODO: Players should be removed here
 
         //MinecraftServer.getInstanceManager().unregisterInstance(instance);
         MinecraftServer.getBossBarManager().destroyBossBar(bossBar);
-        gameBeginTask.cancel();
-        if (gameTimerTask != null) gameTimerTask.cancel();
+        this.gameBeginTask.cancel();
+        if (this.gameTimerTask != null) this.gameTimerTask.cancel();
     }
 
     @Override

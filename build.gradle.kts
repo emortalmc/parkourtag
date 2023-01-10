@@ -22,10 +22,10 @@ dependencies {
     implementation("com.github.Minestom:Minestom:eb06ba8664")
     implementation("com.github.EmortalMC:TNT:4ef1b53482")
 
-    implementation("dev.emortal.minestom:core:910726b")
+    implementation("dev.emortal.minestom:core:baf566a")
     implementation("net.kyori:adventure-text-minimessage:4.12.0")
 
-    implementation("dev.emortal.minestom:game-sdk:e124522")
+    implementation("dev.emortal.minestom:game-sdk:fa0dacd")
 
 }
 
@@ -47,5 +47,4 @@ tasks {
     }
 
     build { dependsOn(shadowJar) }
-
 }

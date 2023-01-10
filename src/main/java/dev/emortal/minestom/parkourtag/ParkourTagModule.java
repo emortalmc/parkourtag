@@ -9,11 +9,16 @@ import dev.emortal.minestom.gamesdk.GameSdkModule;
 import dev.emortal.minestom.gamesdk.config.GameCreationInfo;
 import dev.emortal.minestom.gamesdk.config.GameSdkConfig;
 import dev.emortal.minestom.parkourtag.config.SpawnPositionJson;
+import net.minestom.server.MinecraftServer;
+import net.minestom.server.event.Event;
+import net.minestom.server.event.EventNode;
 import net.minestom.server.event.inventory.InventoryPreClickEvent;
 import net.minestom.server.event.item.ItemDropEvent;
 import net.minestom.server.event.player.PlayerLoginEvent;
 import net.minestom.server.event.player.PlayerSwapItemEvent;
 import net.minestom.server.extras.MojangAuth;
+import net.minestom.server.instance.Instance;
+import net.minestom.server.world.DimensionType;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,11 +54,15 @@ public class ParkourTagModule extends Module {
 
         MojangAuth.init();
 
+//        Instance instance = MinecraftServer.getInstanceManager().createInstanceContainer(DimensionType.OVERWORLD, null);
+//
+//        this.eventNode.addListener(PlayerLoginEvent.class, event -> event.setSpawningInstance(instance));
+
         GameSdkModule.init(
                 new GameSdkConfig.Builder()
                         .minPlayers(ParkourTagGame.MIN_PLAYERS)
                         .maxGames(10)
-                        .gameSupplier(ParkourTagGame::new)
+                        .gameSupplier(info -> new ParkourTagGame(info, super.eventNode))
                         .build()
         );
 
