@@ -26,7 +26,7 @@ dependencies {
     implementation("net.kyori:adventure-text-minimessage:4.12.0")
 
     implementation("dev.emortal.minestom:game-sdk:fa0dacd")
-
+    implementation("dev.emortal.api:kurushimi-sdk:2ae9dd3")
 }
 
 tasks {

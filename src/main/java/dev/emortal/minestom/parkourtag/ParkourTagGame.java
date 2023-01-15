@@ -1,6 +1,7 @@
 package dev.emortal.minestom.parkourtag;
 
 import com.google.common.collect.Sets;
+import dev.emortal.api.kurushimi.KurushimiUtils;
 import dev.emortal.minestom.core.Environment;
 import dev.emortal.minestom.gamesdk.config.GameCreationInfo;
 import dev.emortal.minestom.gamesdk.game.Game;
@@ -120,7 +121,7 @@ public class ParkourTagGame extends Game {
             worldLoadFuture.join();
 
             Player player = event.getPlayer();
-            if (!creationInfo.playerIds().contains(event.getPlayer().getUuid())) {
+            if (!creationInfo.playerIds().contains(player.getUuid())) {
                 player.kick("Unexpected join (" + Environment.getHostname() + ")");
                 LOGGER.info("Unexpected join for player {}", player.getUuid());
                 return;
@@ -300,19 +301,19 @@ public class ParkourTagGame extends Game {
         tagger.setTeam(TAGGER_TEAM);
         tagger.setGlowing(true);
 
-        int goonsLeft = players.size() - 1;
-        bossBar.name(
+        int goonsLeft = this.players.size() - 1;
+        this.bossBar.name(
                 Component.text()
                         .append(Component.text(goonsLeft, TextColor.fromHexString("#cdffc4"), TextDecoration.BOLD)) // assumes only one tagger
                         .append(Component.text(goonsLeft == 1 ? " goon remaining" : " goons remaining", TextColor.fromHexString("#8fff82")))
                         .build()
         );
-        bossBar.color(BossBar.Color.GREEN);
+        this.bossBar.color(BossBar.Color.GREEN);
 
         beginTimer();
 
-        for (Player player : players) {
-            player.showBossBar(bossBar);
+        for (Player player : this.players) {
+            player.showBossBar(this.bossBar);
 
             if (player.getUuid() == tagger.getUuid()) {
                 player.teleport(SPAWN_POSITION_MAP.get("city").tagger.asPos());
@@ -352,7 +353,7 @@ public class ParkourTagGame extends Game {
 
             // Pick a random death message
             ThreadLocalRandom random = ThreadLocalRandom.current();
-            audience.sendMessage(MINI_MESSAGE.deserialize(
+            this.audience.sendMessage(MINI_MESSAGE.deserialize(
                     "<gray>" +
                             DEATH_MESSAGES.get(random.nextInt(DEATH_MESSAGES.size())),
                     Placeholder.component("victim", Component.text(target.getUsername(), NamedTextColor.RED)),
@@ -369,15 +370,15 @@ public class ParkourTagGame extends Game {
                     List.of(new Color(java.awt.Color.HSBtoRGB(random.nextFloat(), 1f, 1f))),
                     List.of()
             );
-            FireworkUtils.showFirework(players, instance, target.getPosition().add(0, 1.5, 0), List.of(randomColorEffect));
+            FireworkUtils.showFirework(this.players, this.instance, target.getPosition().add(0, 1.5, 0), List.of(randomColorEffect));
 
             // Check for win with new alive count
-            checkPlayerCounts();
+            this.checkPlayerCounts();
         });
     }
 
     private void beginTimer() {
-        this.gameTimerTask = instance.scheduler().submitTask(new Supplier<>() {
+        this.gameTimerTask = this.instance.scheduler().submitTask(new Supplier<>() {
             final int startingSecondsLeft = 60; // TODO: Make this dynamic
             int secondsLeft = startingSecondsLeft;
 
@@ -504,11 +505,19 @@ public class ParkourTagGame extends Game {
     }
 
     public void destroy() {
+        KurushimiUtils.sendToLobby(this.players, () -> {
+            // todo notifier game manager the game is finished and removed
+            this.cleanUp();
+        }, () -> {
+            // todo notifier game manager the game is finished and removed
+            this.cleanUp();
+        });
+    }
 
-        // TODO: Players should be removed here
-
-        //MinecraftServer.getInstanceManager().unregisterInstance(instance);
-        MinecraftServer.getBossBarManager().destroyBossBar(bossBar);
+    private void cleanUp() {
+        for (Player player : this.players) player.kick(Component.text("The game ended but we weren't able to connect you to a lobby. Please reconnect", NamedTextColor.RED));
+        MinecraftServer.getInstanceManager().unregisterInstance(this.instance);
+        MinecraftServer.getBossBarManager().destroyBossBar(this.bossBar);
         this.gameBeginTask.cancel();
         if (this.gameTimerTask != null) this.gameTimerTask.cancel();
     }
