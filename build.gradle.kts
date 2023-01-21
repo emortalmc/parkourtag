@@ -23,7 +23,7 @@ dependencies {
     implementation("dev.emortal.minestom:core:b875988")
     implementation("net.kyori:adventure-text-minimessage:4.12.0")
 
-    implementation("dev.emortal.minestom:game-sdk:local")
+    implementation("dev.emortal.minestom:game-sdk:fba7a26")
     implementation("dev.emortal.api:kurushimi-sdk:2ae9dd3")
 }
 

@@ -8,7 +8,6 @@ import dev.emortal.minestom.gamesdk.game.Game;
 import dev.emortal.minestom.parkourtag.utils.FireworkUtils;
 import dev.emortal.tnt.TNTLoader;
 import dev.emortal.tnt.source.FileTNTSource;
-import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
@@ -18,7 +17,6 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
-import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.title.Title;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.color.Color;
@@ -27,7 +25,6 @@ import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.Event;
-import net.minestom.server.event.EventFilter;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.entity.EntityAttackEvent;
 import net.minestom.server.event.player.PlayerDisconnectEvent;
@@ -51,7 +48,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
@@ -101,8 +101,6 @@ public class ParkourTagGame extends Game {
     private final @NotNull CompletableFuture<Void> instanceLoadFuture;
     private @NotNull Instance instance;
     private EventNode<InstanceEvent> eventNode;
-    private @NotNull Set<Player> players = Sets.newConcurrentHashSet();
-    private Audience audience = Audience.audience(players);
 
     private Task gameBeginTask;
     private BossBar bossBar = BossBar.bossBar(Component.empty(), 0f, BossBar.Color.PINK, BossBar.Overlay.PROGRESS);
@@ -138,8 +136,6 @@ public class ParkourTagGame extends Game {
             player.setGameMode(GameMode.ADVENTURE);
             player.showBossBar(this.bossBar);
         });
-
-
     }
 
     @Override
@@ -459,15 +455,6 @@ public class ParkourTagGame extends Game {
         }
 
         instance.scheduler().buildTask(this::destroy).delay(TaskSchedule.seconds(6)).schedule();
-    }
-
-    @Override
-    public @NotNull Set<UUID> getPlayers() {
-        Set<UUID> uuids = new HashSet<>();
-        for (Player player : this.players) {
-            uuids.add(player.getUuid());
-        }
-        return uuids;
     }
 
     public @NotNull Set<Player> getGoons() {
