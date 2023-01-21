@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-@ModuleData(name = "parkourtag", required = true)
+@ModuleData(name = "parkourtag", softDependencies = {GameSdkModule.class}, required = true)
 public class ParkourTagModule extends Module {
     private static final Logger LOGGER = LoggerFactory.getLogger(ParkourTagModule.class);
     private static final Gson GSON = new Gson();

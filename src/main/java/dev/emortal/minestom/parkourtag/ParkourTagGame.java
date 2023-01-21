@@ -98,6 +98,7 @@ public class ParkourTagGame extends Game {
     );
 
 
+    private final @NotNull CompletableFuture<Void> instanceLoadFuture;
     private @NotNull Instance instance;
     private EventNode<InstanceEvent> eventNode;
     private @NotNull Set<Player> players = Sets.newConcurrentHashSet();
@@ -113,12 +114,12 @@ public class ParkourTagGame extends Game {
         EventNode<Event> gameEventNode = EventNode.all(UUID.randomUUID().toString());
         parentEventNode.addChild(gameEventNode);
 
-        CompletableFuture<Void> worldLoadFuture = CompletableFuture.runAsync(() -> {
+        this.instanceLoadFuture = CompletableFuture.runAsync(() -> {
             this.instance = this.createInstance();
         });
 
         parentEventNode.addListener(PlayerLoginEvent.class, event -> {
-            worldLoadFuture.join();
+            this.instanceLoadFuture.join();
 
             Player player = event.getPlayer();
             if (!creationInfo.playerIds().contains(player.getUuid())) {
@@ -138,13 +139,14 @@ public class ParkourTagGame extends Game {
             player.showBossBar(this.bossBar);
         });
 
-        worldLoadFuture.join();
+
+    }
+
+    @Override
+    public void load() {
+        this.instanceLoadFuture.join();
 
         this.eventNode = this.instance.eventNode();
-        // world loading takes some time so players might have already joined
-//        for (Player player : this.players) {
-//            player.setInstance(this.instance, SPAWN_POINT);
-//        }
 
         // TODO: event node needed here
         MinecraftServer.getGlobalEventHandler().addListener(PlayerDisconnectEvent.class, event -> {
@@ -180,32 +182,24 @@ public class ParkourTagGame extends Game {
         instance.setTimeRate(0);
         instance.setTimeUpdate(null);
 
-        LOGGER.info("Setting chunk loader");
         try {
             instance.setChunkLoader(new TNTLoader(new FileTNTSource(Path.of("city.tnt"))));
         } catch (IOException | NBTException e) {
             throw new RuntimeException(e);
         }
-        LOGGER.info("Returning instance for game");
-
-//        int chunkRadius = 5;
-//        for (int x = -chunkRadius; x < chunkRadius; x++) {
-//            for (int y = -chunkRadius; y < chunkRadius; y++) {
-//                instance.loadChunk(x, y);
-//            }
-//        }
 
         return instance;
     }
 
-    private void start() {
-        for (Player player : players) {
-            player.hideBossBar(bossBar);
+    public void start() {
+        this.gameBeginTask.cancel();
+        for (Player player : this.players) {
+            player.hideBossBar(this.bossBar);
         }
 
-        audience.playSound(Sound.sound(SoundEvent.BLOCK_PORTAL_TRIGGER, Sound.Source.MASTER, 0.45f, 1.27f));
+        this.audience.playSound(Sound.sound(SoundEvent.BLOCK_PORTAL_TRIGGER, Sound.Source.MASTER, 0.45f, 1.27f));
 
-        instance.scheduler().submitTask(new Supplier<>() {
+        this.instance.scheduler().submitTask(new Supplier<>() {
             int i = 3;
 
             @Override
@@ -515,7 +509,8 @@ public class ParkourTagGame extends Game {
     }
 
     private void cleanUp() {
-        for (Player player : this.players) player.kick(Component.text("The game ended but we weren't able to connect you to a lobby. Please reconnect", NamedTextColor.RED));
+        for (Player player : this.players)
+            player.kick(Component.text("The game ended but we weren't able to connect you to a lobby. Please reconnect", NamedTextColor.RED));
         MinecraftServer.getInstanceManager().unregisterInstance(this.instance);
         MinecraftServer.getBossBarManager().destroyBossBar(this.bossBar);
         this.gameBeginTask.cancel();
@@ -524,7 +519,8 @@ public class ParkourTagGame extends Game {
 
     @Override
     public void fastStart() {
-        gameBeginTask.cancel();
-        start();
+        LOGGER.info("Fast starting game");
+        this.start();
+        this.gameBeginTask.cancel();
     }
 }
