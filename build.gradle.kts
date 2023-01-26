@@ -17,13 +17,12 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.Minestom:Minestom:eb06ba8664")
     implementation("com.github.EmortalMC:TNT:4ef1b53482")
 
-    implementation("dev.emortal.minestom:core:b875988")
+    implementation("dev.emortal.minestom:core:acb3ec4")
     implementation("net.kyori:adventure-text-minimessage:4.12.0")
 
-    implementation("dev.emortal.minestom:game-sdk:fba7a26")
+    implementation("dev.emortal.minestom:game-sdk:848f89b")
     implementation("dev.emortal.api:kurushimi-sdk:2ae9dd3")
 }
 

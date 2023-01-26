@@ -25,11 +25,13 @@ import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.Event;
+import net.minestom.server.event.EventFilter;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.entity.EntityAttackEvent;
 import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.player.PlayerLoginEvent;
 import net.minestom.server.event.trait.InstanceEvent;
+import net.minestom.server.event.trait.PlayerEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.item.firework.FireworkEffect;
@@ -97,26 +99,24 @@ public class ParkourTagGame extends Game {
             "<victim> failed <tagger>'s expectations"
     );
 
+    private final EventNode<Event> gameEventNode;
 
     private final @NotNull CompletableFuture<Void> instanceLoadFuture;
     private @NotNull Instance instance;
-    private EventNode<InstanceEvent> eventNode;
 
-    private Task gameBeginTask;
     private BossBar bossBar = BossBar.bossBar(Component.empty(), 0f, BossBar.Color.PINK, BossBar.Overlay.PROGRESS);
 
     private @Nullable Task gameTimerTask;
 
-    protected ParkourTagGame(@NotNull GameCreationInfo creationInfo, @NotNull EventNode<Event> parentEventNode) {
+    protected ParkourTagGame(@NotNull GameCreationInfo creationInfo, @NotNull EventNode<Event> gameEventNode) {
         super(creationInfo);
-        EventNode<Event> gameEventNode = EventNode.all(UUID.randomUUID().toString());
-        parentEventNode.addChild(gameEventNode);
+        this.gameEventNode = gameEventNode;
 
         this.instanceLoadFuture = CompletableFuture.runAsync(() -> {
             this.instance = this.createInstance();
         });
 
-        parentEventNode.addListener(PlayerLoginEvent.class, event -> {
+        gameEventNode.addListener(PlayerLoginEvent.class, event -> {
             this.instanceLoadFuture.join();
 
             Player player = event.getPlayer();
@@ -142,33 +142,8 @@ public class ParkourTagGame extends Game {
     public void load() {
         this.instanceLoadFuture.join();
 
-        this.eventNode = this.instance.eventNode();
-
-        // TODO: event node needed here
-        MinecraftServer.getGlobalEventHandler().addListener(PlayerDisconnectEvent.class, event -> {
+        this.gameEventNode.addListener(PlayerDisconnectEvent.class, event -> {
             if (this.players.remove(event.getPlayer())) this.checkPlayerCounts();
-        });
-
-        this.gameBeginTask = this.instance.scheduler().submitTask(new Supplier<>() {
-            int i = 10;
-
-            @Override
-            public TaskSchedule get() {
-                if (i == 0) {
-                    if (players.size() >= MIN_PLAYERS) {
-                        start();
-                    }
-
-                    return TaskSchedule.stop();
-                }
-
-                bossBar.name(Component.text("Waiting for players (" + i + "s)"));
-
-                i--;
-
-                return TaskSchedule.seconds(1);
-            }
-
         });
     }
 
@@ -188,7 +163,6 @@ public class ParkourTagGame extends Game {
     }
 
     public void start() {
-        this.gameBeginTask.cancel();
         for (Player player : this.players) {
             player.hideBossBar(this.bossBar);
         }
@@ -500,14 +474,6 @@ public class ParkourTagGame extends Game {
             player.kick(Component.text("The game ended but we weren't able to connect you to a lobby. Please reconnect", NamedTextColor.RED));
         MinecraftServer.getInstanceManager().unregisterInstance(this.instance);
         MinecraftServer.getBossBarManager().destroyBossBar(this.bossBar);
-        this.gameBeginTask.cancel();
         if (this.gameTimerTask != null) this.gameTimerTask.cancel();
-    }
-
-    @Override
-    public void fastStart() {
-        LOGGER.info("Fast starting game");
-        this.start();
-        this.gameBeginTask.cancel();
     }
 }

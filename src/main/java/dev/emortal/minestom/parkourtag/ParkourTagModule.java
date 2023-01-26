@@ -52,7 +52,7 @@ public class ParkourTagModule extends Module {
                 new GameSdkConfig.Builder()
                         .minPlayers(ParkourTagGame.MIN_PLAYERS)
                         .maxGames(10)
-                        .gameSupplier(info -> new ParkourTagGame(info, super.eventNode))
+                        .gameSupplier(ParkourTagGame::new)
                         .build()
         );
 
