@@ -3,6 +3,7 @@ package dev.emortal.minestom.parkourtag;
 import com.google.common.collect.Sets;
 import dev.emortal.api.kurushimi.KurushimiUtils;
 import dev.emortal.minestom.core.Environment;
+import dev.emortal.minestom.gamesdk.GameSdkModule;
 import dev.emortal.minestom.gamesdk.config.GameCreationInfo;
 import dev.emortal.minestom.gamesdk.game.Game;
 import dev.emortal.minestom.parkourtag.utils.FireworkUtils;
@@ -25,13 +26,10 @@ import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.Event;
-import net.minestom.server.event.EventFilter;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.entity.EntityAttackEvent;
 import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.player.PlayerLoginEvent;
-import net.minestom.server.event.trait.InstanceEvent;
-import net.minestom.server.event.trait.PlayerEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.item.firework.FireworkEffect;
@@ -53,8 +51,6 @@ import java.time.Duration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 
@@ -415,7 +411,7 @@ public class ParkourTagGame extends Game {
             }
         }
 
-        instance.scheduler().buildTask(this::destroy).delay(TaskSchedule.seconds(6)).schedule();
+        instance.scheduler().buildTask(this::sendBackToLobby).delay(TaskSchedule.seconds(6)).schedule();
     }
 
     public @NotNull Set<Player> getGoons() {
@@ -443,22 +439,22 @@ public class ParkourTagGame extends Game {
     @Override
     public void cancel() {
         LOGGER.warn("Game cancelled");
-        destroy();
+        sendBackToLobby();
     }
 
-    public void destroy() {
-        KurushimiUtils.sendToLobby(this.players, () -> {
-            // todo notifier game manager the game is finished and removed
-            this.cleanUp();
-        }, () -> {
-            // todo notifier game manager the game is finished and removed
-            this.cleanUp();
-        });
+    private void sendBackToLobby() {
+        KurushimiUtils.sendToLobby(players, this::removeGame, this::removeGame);
+    }
+
+    private void removeGame() {
+        GameSdkModule.getGameManager().removeGame(this);
+        cleanUp();
     }
 
     private void cleanUp() {
-        for (Player player : this.players)
+        for (final Player player : this.players) {
             player.kick(Component.text("The game ended but we weren't able to connect you to a lobby. Please reconnect", NamedTextColor.RED));
+        }
         MinecraftServer.getInstanceManager().unregisterInstance(this.instance);
         MinecraftServer.getBossBarManager().destroyBossBar(this.bossBar);
         if (this.gameTimerTask != null) this.gameTimerTask.cancel();
