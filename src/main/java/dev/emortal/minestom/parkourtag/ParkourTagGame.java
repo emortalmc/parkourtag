@@ -126,6 +126,9 @@ public class ParkourTagGame extends Game {
         this.players.add(player);
 
         player.setAutoViewable(true);
+        player.setTeam(null);
+        player.setGlowing(false);
+        player.setGameMode(GameMode.ADVENTURE);
         player.showBossBar(this.bossBar);
     }
 
