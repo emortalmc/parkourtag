@@ -99,10 +99,7 @@ public class ParkourTagGame extends Game {
             "<victim> failed <tagger>'s expectations"
     );
 
-    private final EventNode<Event> gameEventNode;
-
-    private final @NotNull CompletableFuture<Void> instanceLoadFuture;
-    private @NotNull Instance instance;
+    private final @NotNull Instance instance;
 
     private BossBar bossBar = BossBar.bossBar(Component.empty(), 0f, BossBar.Color.PINK, BossBar.Overlay.PROGRESS);
 
@@ -110,17 +107,15 @@ public class ParkourTagGame extends Game {
 
     protected ParkourTagGame(@NotNull GameCreationInfo creationInfo, @NotNull EventNode<Event> gameEventNode) {
         super(creationInfo);
-        this.gameEventNode = gameEventNode;
+        this.instance = this.createInstance();
 
-        this.instanceLoadFuture = CompletableFuture.runAsync(() -> {
-            this.instance = this.createInstance();
+        gameEventNode.addListener(PlayerDisconnectEvent.class, event -> {
+            if (this.players.remove(event.getPlayer())) this.checkPlayerCounts();
         });
     }
 
     @Override
     public void onPlayerLogin(@NotNull PlayerLoginEvent event) {
-        this.instanceLoadFuture.join();
-
         Player player = event.getPlayer();
         if (!getGameCreationInfo().playerIds().contains(player.getUuid())) {
             player.kick("Unexpected join (" + Environment.getHostname() + ")");
@@ -137,15 +132,6 @@ public class ParkourTagGame extends Game {
         player.setGlowing(false);
         player.setGameMode(GameMode.ADVENTURE);
         player.showBossBar(this.bossBar);
-    }
-
-    @Override
-    public void load() {
-        this.instanceLoadFuture.join();
-
-        this.gameEventNode.addListener(PlayerDisconnectEvent.class, event -> {
-            if (this.players.remove(event.getPlayer())) this.checkPlayerCounts();
-        });
     }
 
     private Instance createInstance() {
