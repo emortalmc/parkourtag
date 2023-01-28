@@ -9,6 +9,7 @@ import dev.emortal.minestom.gamesdk.game.Game;
 import dev.emortal.minestom.parkourtag.utils.FireworkUtils;
 import dev.emortal.tnt.TNTLoader;
 import dev.emortal.tnt.source.FileTNTSource;
+import java.util.UUID;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
@@ -30,6 +31,7 @@ import net.minestom.server.event.EventNode;
 import net.minestom.server.event.entity.EntityAttackEvent;
 import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.player.PlayerLoginEvent;
+import net.minestom.server.event.player.PlayerSpawnEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.item.firework.FireworkEffect;
@@ -105,6 +107,12 @@ public class ParkourTagGame extends Game {
         super(creationInfo);
         this.instance = this.createInstance();
 
+        gameEventNode.addListener(PlayerSpawnEvent.class, event -> {
+            final Player player = event.getPlayer();
+            player.setTeam(null);
+            player.setGlowing(false);
+            player.setGameMode(GameMode.ADVENTURE);
+        });
         gameEventNode.addListener(PlayerDisconnectEvent.class, event -> {
             if (this.players.remove(event.getPlayer())) this.checkPlayerCounts();
         });
@@ -124,9 +132,6 @@ public class ParkourTagGame extends Game {
         this.players.add(player);
 
         player.setAutoViewable(true);
-        player.setTeam(null);
-        player.setGlowing(false);
-        player.setGameMode(GameMode.ADVENTURE);
         player.showBossBar(this.bossBar);
     }
 
