@@ -115,27 +115,28 @@ public class ParkourTagGame extends Game {
         this.instanceLoadFuture = CompletableFuture.runAsync(() -> {
             this.instance = this.createInstance();
         });
+    }
 
-        gameEventNode.addListener(PlayerLoginEvent.class, event -> {
-            this.instanceLoadFuture.join();
+    @Override
+    public void onPlayerLogin(@NotNull PlayerLoginEvent event) {
+        this.instanceLoadFuture.join();
 
-            Player player = event.getPlayer();
-            if (!creationInfo.playerIds().contains(player.getUuid())) {
-                player.kick("Unexpected join (" + Environment.getHostname() + ")");
-                LOGGER.info("Unexpected join for player {}", player.getUuid());
-                return;
-            }
+        Player player = event.getPlayer();
+        if (!getGameCreationInfo().playerIds().contains(player.getUuid())) {
+            player.kick("Unexpected join (" + Environment.getHostname() + ")");
+            LOGGER.info("Unexpected join for player {}", player.getUuid());
+            return;
+        }
 
-            player.setRespawnPoint(SPAWN_POINT);
-            event.setSpawningInstance(this.instance);
-            this.players.add(player);
+        player.setRespawnPoint(SPAWN_POINT);
+        event.setSpawningInstance(this.instance);
+        this.players.add(player);
 
-            player.setAutoViewable(true);
-            player.setTeam(null);
-            player.setGlowing(false);
-            player.setGameMode(GameMode.ADVENTURE);
-            player.showBossBar(this.bossBar);
-        });
+        player.setAutoViewable(true);
+        player.setTeam(null);
+        player.setGlowing(false);
+        player.setGameMode(GameMode.ADVENTURE);
+        player.showBossBar(this.bossBar);
     }
 
     @Override
