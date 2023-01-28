@@ -107,12 +107,6 @@ public class ParkourTagGame extends Game {
         super(creationInfo);
         this.instance = this.createInstance();
 
-        gameEventNode.addListener(PlayerSpawnEvent.class, event -> {
-            final Player player = event.getPlayer();
-            player.setTeam(null);
-            player.setGlowing(false);
-            player.setGameMode(GameMode.ADVENTURE);
-        });
         gameEventNode.addListener(PlayerDisconnectEvent.class, event -> {
             if (this.players.remove(event.getPlayer())) this.checkPlayerCounts();
         });
@@ -448,6 +442,9 @@ public class ParkourTagGame extends Game {
     }
 
     private void sendBackToLobby() {
+        for (final Player player : players) {
+            player.setTeam(null);
+        }
         KurushimiUtils.sendToLobby(players, this::removeGame, this::removeGame);
     }
 
