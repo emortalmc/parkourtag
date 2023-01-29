@@ -8,10 +8,8 @@ import dev.emortal.minestom.gamesdk.config.GameCreationInfo;
 import dev.emortal.minestom.gamesdk.game.Game;
 import dev.emortal.minestom.parkourtag.listeners.AttackListener;
 import dev.emortal.minestom.parkourtag.listeners.TickListener;
-import dev.emortal.minestom.parkourtag.utils.FireworkUtils;
 import dev.emortal.tnt.TNTLoader;
 import dev.emortal.tnt.source.FileTNTSource;
-import java.util.UUID;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
@@ -20,10 +18,8 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.title.Title;
 import net.minestom.server.MinecraftServer;
-import net.minestom.server.color.Color;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
@@ -32,14 +28,10 @@ import net.minestom.server.entity.Player;
 import net.minestom.server.entity.metadata.other.AreaEffectCloudMeta;
 import net.minestom.server.event.Event;
 import net.minestom.server.event.EventNode;
-import net.minestom.server.event.entity.EntityAttackEvent;
 import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.player.PlayerLoginEvent;
-import net.minestom.server.event.player.PlayerSpawnEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
-import net.minestom.server.item.firework.FireworkEffect;
-import net.minestom.server.item.firework.FireworkEffectType;
 import net.minestom.server.network.packet.server.play.TeamsPacket;
 import net.minestom.server.scoreboard.Team;
 import net.minestom.server.sound.SoundEvent;
@@ -55,7 +47,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
@@ -70,6 +61,7 @@ public class ParkourTagGame extends Game {
 
     public static final Team TAGGER_TEAM = MinecraftServer.getTeamManager().createBuilder("taggers")
             .teamColor(NamedTextColor.RED)
+            .nameTagVisibility(TeamsPacket.NameTagVisibility.ALWAYS)
             .updateTeamPacket()
             .build();
     public static final Team GOONS_TEAM = MinecraftServer.getTeamManager().createBuilder("goons")
@@ -256,7 +248,7 @@ public class ParkourTagGame extends Game {
                         .build()
         );
         this.bossBar.color(BossBar.Color.GREEN);
-
+        
         beginTimer();
 
         var holderEntity = new Entity(EntityType.AREA_EFFECT_CLOUD);
@@ -275,7 +267,6 @@ public class ParkourTagGame extends Game {
                 audience.sendActionBar(Component.text("The tagger has been released!", NamedTextColor.GOLD));
 
                 for (Player tagger : taggers) {
-                    tagger.teleport(SPAWN_POSITION_MAP.get("city").tagger.asPos());
                     tagger.updateViewerRule((entity) -> true);
                 }
                 holderEntity.remove();

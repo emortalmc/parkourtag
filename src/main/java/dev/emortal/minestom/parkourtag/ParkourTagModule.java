@@ -6,12 +6,8 @@ import dev.emortal.minestom.core.module.Module;
 import dev.emortal.minestom.core.module.ModuleData;
 import dev.emortal.minestom.core.module.ModuleEnvironment;
 import dev.emortal.minestom.gamesdk.GameSdkModule;
-import dev.emortal.minestom.gamesdk.config.GameCreationInfo;
 import dev.emortal.minestom.gamesdk.config.GameSdkConfig;
 import dev.emortal.minestom.parkourtag.config.SpawnPositionJson;
-import net.minestom.server.event.inventory.InventoryPreClickEvent;
-import net.minestom.server.event.item.ItemDropEvent;
-import net.minestom.server.event.player.PlayerSwapItemEvent;
 import net.minestom.server.extras.MojangAuth;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -22,11 +18,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
 
 @ModuleData(name = "parkourtag", softDependencies = {GameSdkModule.class}, required = true)
 public class ParkourTagModule extends Module {
