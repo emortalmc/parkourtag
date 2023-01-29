@@ -7,6 +7,7 @@ import dev.emortal.minestom.gamesdk.GameSdkModule;
 import dev.emortal.minestom.gamesdk.config.GameCreationInfo;
 import dev.emortal.minestom.gamesdk.game.Game;
 import dev.emortal.minestom.parkourtag.listeners.AttackListener;
+import dev.emortal.minestom.parkourtag.listeners.DoubleJumpListener;
 import dev.emortal.minestom.parkourtag.listeners.TickListener;
 import dev.emortal.tnt.TNTLoader;
 import dev.emortal.tnt.source.FileTNTSource;
@@ -30,6 +31,7 @@ import net.minestom.server.event.Event;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.player.PlayerLoginEvent;
+import net.minestom.server.event.trait.InstanceEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.network.packet.server.play.TeamsPacket;
@@ -285,8 +287,10 @@ public class ParkourTagGame extends Game {
             }
         }
 
-        AttackListener.registerListener(instance.eventNode(), this);
-        TickListener.registerListener(instance.eventNode(), this);
+        EventNode<InstanceEvent> eventNode = instance.eventNode();
+        AttackListener.registerListener(eventNode, this);
+        TickListener.registerListener(eventNode, this);
+        DoubleJumpListener.registerListener(eventNode, this);
     }
 
     private void beginTimer() {
