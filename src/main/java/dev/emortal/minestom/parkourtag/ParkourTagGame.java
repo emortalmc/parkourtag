@@ -251,8 +251,6 @@ public class ParkourTagGame extends Game {
         );
         this.bossBar.color(BossBar.Color.GREEN);
 
-        beginTimer();
-
         var holderEntity = new Entity(EntityType.AREA_EFFECT_CLOUD);
         ((AreaEffectCloudMeta) holderEntity.getEntityMeta()).setRadius(0f);
         holderEntity.setInstance(instance, SPAWN_POSITION_MAP.get("city").tagger.asPos()).thenRun(() -> {
@@ -267,6 +265,8 @@ public class ParkourTagGame extends Game {
                 allowHitPlayers = true;
 
                 audience.sendActionBar(Component.text("The tagger has been released!", NamedTextColor.GOLD));
+
+                beginTimer();
 
                 for (Player tagger : taggers) {
                     tagger.updateViewerRule((entity) -> true);
