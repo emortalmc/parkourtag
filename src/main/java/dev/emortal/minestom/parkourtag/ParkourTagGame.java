@@ -6,6 +6,8 @@ import dev.emortal.minestom.core.Environment;
 import dev.emortal.minestom.gamesdk.GameSdkModule;
 import dev.emortal.minestom.gamesdk.config.GameCreationInfo;
 import dev.emortal.minestom.gamesdk.game.Game;
+import dev.emortal.minestom.parkourtag.listeners.AttackListener;
+import dev.emortal.minestom.parkourtag.listeners.TickListener;
 import dev.emortal.minestom.parkourtag.utils.FireworkUtils;
 import dev.emortal.tnt.TNTLoader;
 import dev.emortal.tnt.source.FileTNTSource;
@@ -23,9 +25,11 @@ import net.kyori.adventure.title.Title;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.color.Color;
 import net.minestom.server.coordinate.Pos;
+import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
+import net.minestom.server.entity.metadata.other.AreaEffectCloudMeta;
 import net.minestom.server.event.Event;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.entity.EntityAttackEvent;
@@ -64,42 +68,32 @@ public class ParkourTagGame extends Game {
 
     private static final Pos SPAWN_POINT = new Pos(0.5, 65.0, 0.5);
 
-    private static final Team TAGGER_TEAM = MinecraftServer.getTeamManager().createBuilder("taggers")
+    public static final Team TAGGER_TEAM = MinecraftServer.getTeamManager().createBuilder("taggers")
             .teamColor(NamedTextColor.RED)
             .updateTeamPacket()
             .build();
-    private static final Team GOONS_TEAM = MinecraftServer.getTeamManager().createBuilder("goons")
+    public static final Team GOONS_TEAM = MinecraftServer.getTeamManager().createBuilder("goons")
             .teamColor(NamedTextColor.GREEN)
             .nameTagVisibility(TeamsPacket.NameTagVisibility.HIDE_FOR_OTHER_TEAMS)
             .updateTeamPacket()
             .build();
-    private static final Team DEAD_TEAM = MinecraftServer.getTeamManager().createBuilder("dead")
+    public static final Team DEAD_TEAM = MinecraftServer.getTeamManager().createBuilder("dead")
             .teamColor(NamedTextColor.GRAY)
             .prefix(Component.text("☠ ", NamedTextColor.GRAY))
             .nameTagVisibility(TeamsPacket.NameTagVisibility.NEVER)
             .updateTeamPacket()
             .build();
 
-
     public static final int MIN_PLAYERS = 2;
 
-    private static final List<String> DEATH_MESSAGES = List.of(
-            "<victim> was found by <tagger>",
-            "<victim> failed the jump",
-            "<tagger> was too fast for <victim>",
-            "<victim> isn't very good at hide and seek",
-            "<victim> didn't realise the game started",
-            "<victim> was cornered by <tagger>",
-            "<victim> walked into a wall",
-            "<tagger> got too close to <victim>",
-            "<victim> should play more Marathon",
-            "<victim> skipped leg day",
-            "<victim> failed <tagger>'s expectations"
-    );
+    private final Set<Player> taggers = Sets.newConcurrentHashSet();
+    private final Set<Player> goons = Sets.newConcurrentHashSet();
 
-    private final @NotNull Instance instance;
+    public final @NotNull Instance instance;
 
-    private BossBar bossBar = BossBar.bossBar(Component.empty(), 0f, BossBar.Color.PINK, BossBar.Overlay.PROGRESS);
+    private boolean allowHitPlayers = false;
+
+    private final BossBar bossBar = BossBar.bossBar(Component.empty(), 0f, BossBar.Color.PINK, BossBar.Overlay.PROGRESS);
 
     private @Nullable Task gameTimerTask;
 
@@ -125,6 +119,8 @@ public class ParkourTagGame extends Game {
         event.setSpawningInstance(this.instance);
         this.players.add(player);
 
+        player.setFlying(false);
+        player.setAllowFlying(false);
         player.setAutoViewable(true);
         player.setTeam(null);
         player.setGlowing(false);
@@ -208,7 +204,10 @@ public class ParkourTagGame extends Game {
                         public TaskSchedule get() {
                             if (i >= 30) {
                                 // finally begin the game!!
-                                beginGame(player);
+                                player.setTeam(TAGGER_TEAM);
+                                taggers.add(player);
+
+                                beginGame();
                                 return TaskSchedule.stop();
                             }
 
@@ -246,9 +245,8 @@ public class ParkourTagGame extends Game {
         });
     }
 
-    private void beginGame(Player tagger) {
-        tagger.setTeam(TAGGER_TEAM);
-        tagger.setGlowing(true);
+    private void beginGame() {
+        Set<Player> taggers = getTaggers();
 
         int goonsLeft = this.players.size() - 1;
         this.bossBar.name(
@@ -261,74 +259,48 @@ public class ParkourTagGame extends Game {
 
         beginTimer();
 
+        var holderEntity = new Entity(EntityType.AREA_EFFECT_CLOUD);
+        ((AreaEffectCloudMeta) holderEntity.getEntityMeta()).setRadius(0f);
+        holderEntity.setInstance(instance, SPAWN_POSITION_MAP.get("city").tagger.asPos()).thenRun(() -> {
+            for (Player tagger : taggers) {
+                holderEntity.addPassenger(tagger);
+                tagger.setGlowing(true);
+                tagger.teleport(SPAWN_POSITION_MAP.get("city").tagger.asPos());
+                tagger.updateViewerRule((entity) -> entity.getEntityId() == holderEntity.getEntityId());
+            }
+
+            instance.scheduler().buildTask(() -> {
+                allowHitPlayers = true;
+
+                audience.sendActionBar(Component.text("The tagger has been released!", NamedTextColor.GOLD));
+
+                for (Player tagger : taggers) {
+                    tagger.teleport(SPAWN_POSITION_MAP.get("city").tagger.asPos());
+                    tagger.updateViewerRule((entity) -> true);
+                }
+                holderEntity.remove();
+            }).delay(TaskSchedule.seconds(7)).schedule();
+        });
+
+
+
         for (Player player : this.players) {
             player.showBossBar(this.bossBar);
 
-            if (player.getUuid() == tagger.getUuid()) {
-                player.teleport(SPAWN_POSITION_MAP.get("city").tagger.asPos());
-                continue;
+            if (player.getTeam() == null) { // if player is not tagger
+                player.teleport(SPAWN_POSITION_MAP.get("city").goon.asPos());
+                player.setTeam(GOONS_TEAM);
+                goons.add(player);
             }
-
-            player.setTeam(GOONS_TEAM);
-
-            player.teleport(SPAWN_POSITION_MAP.get("city").goon.asPos());
         }
 
-
-        this.instance.eventNode().addListener(EntityAttackEvent.class, e -> {
-            if (e.getEntity().getUuid() != tagger.getUuid()) return;
-            if (e.getEntity().getEntityType() != EntityType.PLAYER) return;
-            if (e.getTarget().getEntityType() != EntityType.PLAYER) return;
-
-            Player attacker = (Player) e.getEntity();
-            Player target = (Player) e.getTarget();
-
-            if (attacker.getGameMode() != GameMode.ADVENTURE) return;
-            if (target.getGameMode() != GameMode.ADVENTURE) return;
-
-            attacker.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_PLING, Sound.Source.MASTER, 1f, 1f), Sound.Emitter.self());
-            target.showTitle(
-                    Title.title(
-                            Component.text("YOU DIED", NamedTextColor.RED),
-                            Component.empty(),
-                            Title.Times.times(Duration.ZERO, Duration.ofMillis(700), Duration.ofMillis(400))
-                    )
-            );
-
-            target.setGameMode(GameMode.SPECTATOR);
-            target.setAutoViewable(false);
-            target.setGlowing(false);
-            target.setTeam(DEAD_TEAM);
-
-            // Pick a random death message
-            ThreadLocalRandom random = ThreadLocalRandom.current();
-            this.audience.sendMessage(MINI_MESSAGE.deserialize(
-                    "<gray>" +
-                            DEATH_MESSAGES.get(random.nextInt(DEATH_MESSAGES.size())),
-                    Placeholder.component("victim", Component.text(target.getUsername(), NamedTextColor.RED)),
-                    Placeholder.component("tagger", Component.text(tagger.getUsername(), NamedTextColor.WHITE))
-            ));
-
-            target.setVelocity(attacker.getPosition().direction().mul(15.0));
-
-            // Firework death effect
-            FireworkEffect randomColorEffect = new FireworkEffect(
-                    false,
-                    false,
-                    FireworkEffectType.LARGE_BALL,
-                    List.of(new Color(java.awt.Color.HSBtoRGB(random.nextFloat(), 1f, 1f))),
-                    List.of()
-            );
-            FireworkUtils.showFirework(this.players, this.instance, target.getPosition().add(0, 1.5, 0), List.of(randomColorEffect));
-
-            // Check for win with new alive count
-            this.checkPlayerCounts();
-        });
+        AttackListener.registerListener(instance.eventNode(), this);
+        TickListener.registerListener(instance.eventNode(), this);
     }
 
     private void beginTimer() {
         this.gameTimerTask = this.instance.scheduler().submitTask(new Supplier<>() {
-            final int startingSecondsLeft = 60; // TODO: Make this dynamic
+            final int startingSecondsLeft = 90; // TODO: Make this dynamic
             int secondsLeft = startingSecondsLeft;
 
             @Override
@@ -368,10 +340,7 @@ public class ParkourTagGame extends Game {
         });
     }
 
-    private void checkPlayerCounts() {
-        Set<Player> goons = getGoons();
-        Set<Player> taggers = getTaggers();
-
+    public void checkPlayerCounts() {
         if (goons.size() == 0) {
             victory(taggers);
             return;
@@ -383,24 +352,26 @@ public class ParkourTagGame extends Game {
 
         bossBar.name(
                 Component.text()
-                        .append(Component.text(goons.size(), TextColor.fromHexString("#cdffc4"), TextDecoration.BOLD)) // assumes only one tagger
+                        .append(Component.text(goons.size(), TextColor.fromHexString("#cdffc4"), TextDecoration.BOLD))
                         .append(Component.text(goons.size() == 1 ? " goon remaining" : " goons remaining", TextColor.fromHexString("#8fff82")))
                         .build()
         );
     }
 
     private void victory(Set<Player> winners) {
+        allowHitPlayers = false;
+
         if (gameTimerTask != null) gameTimerTask.cancel();
 
         Title victoryTitle = Title.title(
                 MINI_MESSAGE.deserialize("<gradient:#ffc570:gold><bold>VICTORY!"),
                 Component.empty(),
-                Title.Times.times(Duration.ZERO, Duration.ofSeconds(2), Duration.ofSeconds(4))
+                Title.Times.times(Duration.ZERO, Duration.ofSeconds(3), Duration.ofSeconds(3))
         );
         Title defeatTitle = Title.title(
                 MINI_MESSAGE.deserialize("<gradient:#ff474e:#ff0d0d><bold>DEFEAT!"),
                 Component.empty(),
-                Title.Times.times(Duration.ZERO, Duration.ofSeconds(2), Duration.ofSeconds(4))
+                Title.Times.times(Duration.ZERO, Duration.ofSeconds(3), Duration.ofSeconds(3))
         );
 
         for (Player player : players) {
@@ -417,24 +388,15 @@ public class ParkourTagGame extends Game {
     }
 
     public @NotNull Set<Player> getGoons() {
-        Set<Player> goons = Sets.newConcurrentHashSet();
-        for (Player player : this.players) {
-            if (player.getTeam() == null) continue;
-            if (player.getTeam().getTeamName().equals(GOONS_TEAM.getTeamName())) {
-                goons.add(player);
-            }
-        }
         return goons;
     }
 
     public @NotNull Set<Player> getTaggers() {
-        Set<Player> goons = Sets.newConcurrentHashSet();
-        for (Player player : players) {
-            if (player.getTeam().getTeamName().equals(TAGGER_TEAM.getTeamName())) {
-                goons.add(player);
-            }
-        }
-        return goons;
+        return taggers;
+    }
+
+    public boolean canHitPlayers() {
+        return allowHitPlayers;
     }
 
     // TODO rework cancel system

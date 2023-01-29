@@ -6,6 +6,7 @@ import dev.emortal.minestom.core.module.Module;
 import dev.emortal.minestom.core.module.ModuleData;
 import dev.emortal.minestom.core.module.ModuleEnvironment;
 import dev.emortal.minestom.gamesdk.GameSdkModule;
+import dev.emortal.minestom.gamesdk.config.GameCreationInfo;
 import dev.emortal.minestom.gamesdk.config.GameSdkConfig;
 import dev.emortal.minestom.parkourtag.config.SpawnPositionJson;
 import net.minestom.server.event.inventory.InventoryPreClickEvent;
@@ -21,8 +22,11 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 @ModuleData(name = "parkourtag", softDependencies = {GameSdkModule.class}, required = true)
 public class ParkourTagModule extends Module {
@@ -55,18 +59,6 @@ public class ParkourTagModule extends Module {
                         .gameSupplier(ParkourTagGame::new)
                         .build()
         );
-
-//        ParkourTagGame ptg = new ParkourTagGame(
-//                new GameCreationInfo(Set.of(
-//                        UUID.fromString("7bd5b459-1e6b-4753-8274-1fbd2fe9a4d5"),
-//                        UUID.fromString("70cdb3bf-8a7a-4861-af4e-a3ce5070ceb9")
-//                ), Instant.now())
-//        );
-//        GameSdkModule.getGameManager().addGame(ptg);
-
-        this.eventNode.addListener(ItemDropEvent.class, e -> e.setCancelled(true));
-        this.eventNode.addListener(InventoryPreClickEvent.class, e -> e.setCancelled(true));
-        this.eventNode.addListener(PlayerSwapItemEvent.class, e -> e.setCancelled(true));
 
         return true;
     }
