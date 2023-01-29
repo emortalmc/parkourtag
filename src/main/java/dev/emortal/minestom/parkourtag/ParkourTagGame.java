@@ -248,7 +248,7 @@ public class ParkourTagGame extends Game {
                         .build()
         );
         this.bossBar.color(BossBar.Color.GREEN);
-        
+
         beginTimer();
 
         var holderEntity = new Entity(EntityType.AREA_EFFECT_CLOUD);
@@ -290,9 +290,12 @@ public class ParkourTagGame extends Game {
     }
 
     private void beginTimer() {
+        int playTime = 300 / (12 - players.size());
+        int glowing = 15 + ((players.size() * 15) / 8);
+        int doubleJump = glowing / 2;
+
         this.gameTimerTask = this.instance.scheduler().submitTask(new Supplier<>() {
-            final int startingSecondsLeft = 90; // TODO: Make this dynamic
-            int secondsLeft = startingSecondsLeft;
+            int secondsLeft = playTime;
 
             @Override
             public TaskSchedule get() {
@@ -314,16 +317,36 @@ public class ParkourTagGame extends Game {
                     );
                 }
 
-                if (secondsLeft == startingSecondsLeft / 2) {
+                if (secondsLeft == doubleJump) {
                     audience.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_HAT, Sound.Source.MASTER, 1f, 1.5f), Sound.Emitter.self());
-                    audience.sendMessage(
-                            Component.text()
-                                    .append(Component.text(secondsLeft, NamedTextColor.WHITE))
-                                    .append(Component.text(" seconds left!", NamedTextColor.GRAY))
+                    audience.showTitle(
+                            Title.title(
+                                    Component.empty(),
+                                    Component.text("The tagger can now double jump!", NamedTextColor.GRAY),
+                                    Title.Times.times(Duration.ZERO, Duration.ofSeconds(1), Duration.ofSeconds(2))
+                            )
                     );
+
+                    for (Player tagger : taggers) {
+                        tagger.setAllowFlying(true);
+                    }
+                }
+                if (secondsLeft == glowing) {
+                    audience.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_HAT, Sound.Source.MASTER, 1f, 1.5f), Sound.Emitter.self());
+                    audience.showTitle(
+                            Title.title(
+                                    Component.empty(),
+                                    Component.text("Goons are now glowing!", NamedTextColor.GRAY),
+                                    Title.Times.times(Duration.ZERO, Duration.ofSeconds(1), Duration.ofSeconds(2))
+                            )
+                    );
+
+                    for (Player goon : goons) {
+                        goon.setGlowing(true);
+                    }
                 }
 
-                bossBar.progress((float) secondsLeft / (float) startingSecondsLeft);
+                bossBar.progress((float) secondsLeft / (float) playTime);
 
                 secondsLeft--;
                 return TaskSchedule.seconds(1);
@@ -365,17 +388,24 @@ public class ParkourTagGame extends Game {
                 Title.Times.times(Duration.ZERO, Duration.ofSeconds(3), Duration.ofSeconds(3))
         );
 
+        Sound defeatSound = Sound.sound(SoundEvent.ENTITY_VILLAGER_NO, Sound.Source.MASTER, 1f, 1f);
+        Sound victorySound = Sound.sound(SoundEvent.BLOCK_BEACON_POWER_SELECT, Sound.Source.MASTER, 1f, 0.8f);
+
         for (Player player : players) {
             player.hideBossBar(bossBar);
 
             if (winners.contains(player)) {
                 player.showTitle(victoryTitle);
+                player.playSound(victorySound, Sound.Emitter.self());
             } else {
                 player.showTitle(defeatTitle);
+                player.playSound(defeatSound, Sound.Emitter.self());
             }
         }
 
-        instance.scheduler().buildTask(this::sendBackToLobby).delay(TaskSchedule.seconds(6)).schedule();
+        instance.scheduler().buildTask(this::sendBackToLobby)
+                .delay(TaskSchedule.seconds(6))
+                .schedule();
     }
 
     public @NotNull Set<Player> getGoons() {
