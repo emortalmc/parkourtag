@@ -1,7 +1,7 @@
 package dev.emortal.minestom.parkourtag;
 
 import com.google.common.collect.Sets;
-import dev.emortal.api.kurushimi.KurushimiUtils;
+import dev.emortal.api.kurushimi.KurushimiMinestomUtils;
 import dev.emortal.minestom.core.Environment;
 import dev.emortal.minestom.gamesdk.GameSdkModule;
 import dev.emortal.minestom.gamesdk.config.GameCreationInfo;
@@ -9,8 +9,6 @@ import dev.emortal.minestom.gamesdk.game.Game;
 import dev.emortal.minestom.parkourtag.listeners.AttackListener;
 import dev.emortal.minestom.parkourtag.listeners.DoubleJumpListener;
 import dev.emortal.minestom.parkourtag.listeners.TickListener;
-import dev.emortal.tnt.TNTLoader;
-import dev.emortal.tnt.source.FileTNTSource;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
@@ -33,7 +31,6 @@ import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.player.PlayerLoginEvent;
 import net.minestom.server.event.trait.InstanceEvent;
 import net.minestom.server.instance.Instance;
-import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.network.packet.server.play.TeamsPacket;
 import net.minestom.server.scoreboard.Team;
 import net.minestom.server.sound.SoundEvent;
@@ -41,12 +38,9 @@ import net.minestom.server.timer.Task;
 import net.minestom.server.timer.TaskSchedule;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jglrxavpok.hephaistos.nbt.NBTException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Iterator;
 import java.util.Set;
@@ -91,9 +85,12 @@ public class ParkourTagGame extends Game {
 
     private @Nullable Task gameTimerTask;
 
-    protected ParkourTagGame(@NotNull GameCreationInfo creationInfo, @NotNull EventNode<Event> gameEventNode) {
-        super(creationInfo);
-        this.instance = this.createInstance();
+    protected ParkourTagGame(@NotNull GameCreationInfo creationInfo, @NotNull EventNode<Event> gameEventNode, @NotNull Instance instance) {
+        super(creationInfo, gameEventNode);
+
+        instance.setTimeRate(0);
+        instance.setTimeUpdate(null);
+        this.instance = instance;
 
         gameEventNode.addListener(PlayerDisconnectEvent.class, event -> {
             if (this.players.remove(event.getPlayer())) this.checkPlayerCounts();
@@ -120,21 +117,6 @@ public class ParkourTagGame extends Game {
         player.setGlowing(false);
         player.setGameMode(GameMode.ADVENTURE);
         player.showBossBar(this.bossBar);
-    }
-
-    private Instance createInstance() {
-        LOGGER.info("Loading instance for game");
-        InstanceContainer instance = MinecraftServer.getInstanceManager().createInstanceContainer();
-        instance.setTimeRate(0);
-        instance.setTimeUpdate(null);
-
-        try {
-            instance.setChunkLoader(new TNTLoader(new FileTNTSource(Path.of("city.tnt"))));
-        } catch (IOException | NBTException e) {
-            throw new RuntimeException(e);
-        }
-
-        return instance;
     }
 
     public void start() {
@@ -435,7 +417,7 @@ public class ParkourTagGame extends Game {
         for (final Player player : players) {
             player.setTeam(null);
         }
-        KurushimiUtils.sendToLobby(players, this::removeGame, this::removeGame);
+        KurushimiMinestomUtils.sendToLobby(players, this::removeGame, this::removeGame);
     }
 
     private void removeGame() {

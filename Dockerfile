@@ -4,6 +4,6 @@ RUN mkdir /app
 WORKDIR /app
 
 COPY build/libs/*-all.jar /app/parkour_tag.jar
-COPY run/city.tnt /app/city.tnt
+COPY run/maps/*.tnt /app/maps/
 
 CMD ["java", "-jar", "/app/parkour_tag.jar"]

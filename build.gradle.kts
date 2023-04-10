@@ -14,16 +14,19 @@ repositories {
     maven("https://repo.emortal.dev/releases")
 
     maven("https://jitpack.io")
+    maven("https://packages.confluent.io/maven/")
 }
 
 dependencies {
     implementation("com.github.EmortalMC:TNT:4ef1b53482")
 
-    implementation("dev.emortal.minestom:core:acb3ec4")
+    implementation("dev.emortal.minestom:core:83d9a4d")
     implementation("net.kyori:adventure-text-minimessage:4.12.0")
 
-    implementation("dev.emortal.minestom:game-sdk:1b81fd1")
-    implementation("dev.emortal.api:kurushimi-sdk:2ae9dd3")
+    implementation("dev.emortal.minestom:game-sdk:local")
+    implementation("dev.emortal.api:kurushimi-sdk:5f9fde3") {
+        exclude(group = "dev.emortal.minestom", module = "game-sdk")
+    }
 }
 
 tasks {
@@ -31,7 +34,7 @@ tasks {
         mergeServiceFiles()
 
         manifest {
-            attributes (
+            attributes(
                 "Main-Class" to "dev.emortal.minestom.parkourtag.Entrypoint",
                 "Multi-Release" to true
             )

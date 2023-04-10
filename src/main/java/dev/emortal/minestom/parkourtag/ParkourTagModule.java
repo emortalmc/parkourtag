@@ -8,7 +8,7 @@ import dev.emortal.minestom.core.module.ModuleEnvironment;
 import dev.emortal.minestom.gamesdk.GameSdkModule;
 import dev.emortal.minestom.gamesdk.config.GameSdkConfig;
 import dev.emortal.minestom.parkourtag.config.SpawnPositionJson;
-import net.minestom.server.extras.MojangAuth;
+import dev.emortal.minestom.parkourtag.map.MapManager;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,17 +39,13 @@ public class ParkourTagModule extends Module {
         Type type = new TypeToken<HashMap<String, SpawnPositionJson>>(){}.getType();
         SPAWN_POSITION_MAP = GSON.fromJson(reader, type);
 
-        MojangAuth.init();
-
-//        Instance instance = MinecraftServer.getInstanceManager().createInstanceContainer(DimensionType.OVERWORLD, null);
-//
-//        this.eventNode.addListener(PlayerLoginEvent.class, event -> event.setSpawningInstance(instance));
+        MapManager mapManager = new MapManager();
 
         GameSdkModule.init(
                 new GameSdkConfig.Builder()
                         .minPlayers(ParkourTagGame.MIN_PLAYERS)
                         .maxGames(10)
-                        .gameSupplier(ParkourTagGame::new)
+                        .gameSupplier((info, node) -> new ParkourTagGame(info, node, mapManager.getMap(info.mapId())))
                         .build()
         );
 
