@@ -8,6 +8,6 @@ RUN apt-get install wget \
     libstdc++6 libstdc++ # Add libraries required for pyroscope
 
 COPY build/libs/*-all.jar /app/parkour_tag.jar
-COPY run/maps/*.tnt /app/maps/
+COPY run/maps/*.polar /app/maps/
 
 CMD ["java", "-jar", "/app/parkour_tag.jar"]
