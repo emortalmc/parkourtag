@@ -28,6 +28,7 @@ public class FireworkUtils {
         firework.setNoGravity(true);
         firework.setInstance(instance, position);
 
+        // Immediately explode
         PacketUtils.sendGroupedPacket(players, new EntityStatusPacket(firework.getEntityId(), (byte) 17));
 
         firework.remove();

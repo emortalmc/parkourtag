@@ -20,7 +20,6 @@ public class TickListener {
     private static final Tag<Boolean> launchCooldownTag = Tag.Boolean("launchCooldown");
 
     public static void registerListener(EventNode<InstanceEvent> eventNode, ParkourTagGame game) {
-
         eventNode.addListener(EntityTickEvent.class, e -> {
             if (e.getEntity().getEntityType() != EntityType.PLAYER) return;
 
@@ -45,8 +44,8 @@ public class TickListener {
             // Rail launching logic
             if (
                     !player.hasTag(launchCooldownTag)
-                    && player.getInstance().getBlock(playerPos).compare(Block.RAIL)
-                    && player.getInstance().getBlock(playerPos.add(0, 1, 0)).compare(Block.STRUCTURE_VOID)
+                    && player.getInstance().getBlock(playerPos, Block.Getter.Condition.TYPE).compare(Block.RAIL)
+                    && player.getInstance().getBlock(playerPos.add(0, 1, 0), Block.Getter.Condition.TYPE).compare(Block.STRUCTURE_VOID)
             ) {
                 player.playSound(Sound.sound(SoundEvent.ENTITY_BAT_TAKEOFF, Sound.Source.MASTER, 0.5f, 0.8f), Sound.Emitter.self());
                 player.setVelocity(new Vec(0, 22.5, 0));

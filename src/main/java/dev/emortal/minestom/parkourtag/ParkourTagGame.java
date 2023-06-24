@@ -116,14 +116,9 @@ public class ParkourTagGame extends Game {
         player.setTeam(null);
         player.setGlowing(false);
         player.setGameMode(GameMode.ADVENTURE);
-        player.showBossBar(this.bossBar);
     }
 
     public void start() {
-        for (Player player : this.players) {
-            player.hideBossBar(this.bossBar);
-        }
-
         this.audience.playSound(Sound.sound(SoundEvent.BLOCK_PORTAL_TRIGGER, Sound.Source.MASTER, 0.45f, 1.27f));
 
         this.instance.scheduler().submitTask(new Supplier<>() {
@@ -157,7 +152,7 @@ public class ParkourTagGame extends Game {
 
         this.instance.scheduler().submitTask(new Supplier<>() {
             int nameIter = 15;
-            int offset = random.nextInt(players.size());
+            final int offset = random.nextInt(players.size());
 
             @Override
             public TaskSchedule get() {
@@ -187,13 +182,13 @@ public class ParkourTagGame extends Game {
                                 return TaskSchedule.stop();
                             }
 
+                            String isTaggerString = "is the tagger";
+
                             audience.showTitle(
                                     Title.title(
                                             MINI_MESSAGE.deserialize("<rainbow:" + i + ">" + player.getUsername()),
-                                            Component.text("is the tagger", NamedTextColor.GRAY),
-                                            Title.Times.times(
-                                                    Duration.ZERO, Duration.ofMillis(500), Duration.ofMillis(500)
-                                            )
+                                            Component.text(isTaggerString.substring(0, Math.min(i, isTaggerString.length())), NamedTextColor.GRAY),
+                                            Title.Times.times(Duration.ZERO, Duration.ofSeconds(3), Duration.ZERO)
                                     )
                             );
                             i++;
@@ -209,8 +204,8 @@ public class ParkourTagGame extends Game {
                 audience.showTitle(
                         Title.title(
                                 Component.text(player.getUsername()),
-                                Component.text("is the tagger", NamedTextColor.GRAY),
-                                Title.Times.times(Duration.ZERO, Duration.ofMillis(500), Duration.ofMillis(500))
+                                Component.empty(),
+                                Title.Times.times(Duration.ZERO, Duration.ofSeconds(3), Duration.ZERO)
                         )
                 );
 
@@ -222,6 +217,8 @@ public class ParkourTagGame extends Game {
     }
 
     private void beginGame() {
+        audience.clearTitle();
+
         Set<Player> taggers = getTaggers();
 
         int goonsLeft = this.players.size() - 1;
@@ -243,18 +240,36 @@ public class ParkourTagGame extends Game {
                 tagger.updateViewerRule((entity) -> entity.getEntityId() == holderEntity.getEntityId());
             }
 
-            instance.scheduler().buildTask(() -> {
-                allowHitPlayers = true;
+            instance.scheduler().submitTask(new Supplier<>() {
+                int secondsLeft = 7;
 
-                audience.sendActionBar(Component.text("The tagger has been released!", NamedTextColor.GOLD));
+                @Override
+                public TaskSchedule get() {
+                    if (secondsLeft == 0) { // Release tagger
+                        allowHitPlayers = true;
 
-                beginTimer();
+                        audience.sendActionBar(Component.text("The tagger has been released!", NamedTextColor.GOLD));
+                        audience.playSound(Sound.sound(SoundEvent.BLOCK_ANVIL_LAND, Sound.Source.MASTER, 0.3f, 2f));
 
-                for (Player tagger : taggers) {
-                    tagger.updateViewerRule((entity) -> true);
+                        beginTimer();
+
+                        for (Player tagger : taggers) {
+                            tagger.updateViewerRule(e -> true);
+                        }
+                        holderEntity.remove();
+
+                        return TaskSchedule.stop();
+                    }
+
+                    if (secondsLeft <= 3) {
+                        audience.sendActionBar(Component.text("The tagger will be released in " + secondsLeft + "s", NamedTextColor.RED));
+                        audience.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_HAT, Sound.Source.MASTER, 1.5f, 1.5f));
+                    }
+
+                    secondsLeft--;
+                    return TaskSchedule.tick(MinecraftServer.TICK_PER_SECOND);
                 }
-                holderEntity.remove();
-            }).delay(TaskSchedule.seconds(7)).schedule();
+            });
         });
 
 
@@ -268,6 +283,11 @@ public class ParkourTagGame extends Game {
                 goons.add(player);
             }
         }
+
+        // TODO: particles for the city map jump boosters
+//        instance.scheduler().buildTask(() -> {
+//            TaskSchedule.seconds()
+//        }).repeat(TaskSchedule.tick(1));
 
         EventNode<InstanceEvent> eventNode = instance.eventNode();
         AttackListener.registerListener(eventNode, this);
@@ -335,7 +355,7 @@ public class ParkourTagGame extends Game {
                 bossBar.progress((float) secondsLeft / (float) playTime);
 
                 secondsLeft--;
-                return TaskSchedule.seconds(1);
+                return TaskSchedule.tick(MinecraftServer.TICK_PER_SECOND);
             }
         });
     }

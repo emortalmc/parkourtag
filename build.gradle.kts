@@ -18,15 +18,12 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.EmortalMC:TNT:4ef1b53482")
+    implementation("dev.hollowcube:polar:1.2.0")
 
-    implementation("dev.emortal.minestom:core:c302f8f")
+    implementation("dev.emortal.minestom:core:5eeef1f")
+    implementation("dev.emortal.minestom:game-sdk:4d22719")
+
     implementation("net.kyori:adventure-text-minimessage:4.12.0")
-
-    implementation("dev.emortal.minestom:game-sdk:818e2c2")
-    implementation("dev.emortal.api:kurushimi-sdk:848d117") {
-        exclude(group = "dev.emortal.api", module = "common-proto-sdk")
-    }
 }
 
 tasks {
