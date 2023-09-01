@@ -1,14 +1,13 @@
 package dev.emortal.minestom.parkourtag;
 
 import com.google.common.collect.Sets;
-import dev.emortal.api.kurushimi.KurushimiMinestomUtils;
 import dev.emortal.minestom.core.Environment;
-import dev.emortal.minestom.gamesdk.GameSdkModule;
 import dev.emortal.minestom.gamesdk.config.GameCreationInfo;
 import dev.emortal.minestom.gamesdk.game.Game;
 import dev.emortal.minestom.parkourtag.listeners.AttackListener;
 import dev.emortal.minestom.parkourtag.listeners.DoubleJumpListener;
 import dev.emortal.minestom.parkourtag.listeners.TickListener;
+import dev.emortal.minestom.parkourtag.map.MapManager;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
@@ -25,10 +24,8 @@ import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.entity.metadata.other.AreaEffectCloudMeta;
-import net.minestom.server.event.Event;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.player.PlayerDisconnectEvent;
-import net.minestom.server.event.player.PlayerLoginEvent;
 import net.minestom.server.event.trait.InstanceEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.network.packet.server.play.TeamsPacket;
@@ -47,7 +44,7 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 
-import static dev.emortal.minestom.parkourtag.ParkourTagModule.SPAWN_POSITION_MAP;
+import static dev.emortal.minestom.parkourtag.Main.SPAWN_POSITION_MAP;
 
 public class ParkourTagGame extends Game {
     private static final Logger LOGGER = LoggerFactory.getLogger(ParkourTagGame.class);
@@ -85,29 +82,27 @@ public class ParkourTagGame extends Game {
 
     private @Nullable Task gameTimerTask;
 
-    protected ParkourTagGame(@NotNull GameCreationInfo creationInfo, @NotNull EventNode<Event> gameEventNode, @NotNull Instance instance) {
-        super(creationInfo, gameEventNode);
+    protected ParkourTagGame(@NotNull GameCreationInfo creationInfo, @NotNull Instance instance) {
+        super(creationInfo);
 
         instance.setTimeRate(0);
         instance.setTimeUpdate(null);
         this.instance = instance;
 
-        gameEventNode.addListener(PlayerDisconnectEvent.class, event -> {
+        getEventNode().addListener(PlayerDisconnectEvent.class, event -> {
             if (this.players.remove(event.getPlayer())) this.checkPlayerCounts();
         });
     }
 
     @Override
-    public void onPlayerLogin(@NotNull PlayerLoginEvent event) {
-        Player player = event.getPlayer();
-        if (!getGameCreationInfo().playerIds().contains(player.getUuid())) {
+    public void onJoin(Player player) {
+        if (!getCreationInfo().playerIds().contains(player.getUuid())) {
             player.kick("Unexpected join (" + Environment.getHostname() + ")");
             LOGGER.info("Unexpected join for player {}", player.getUuid());
             return;
         }
 
         player.setRespawnPoint(SPAWN_POINT);
-        event.setSpawningInstance(this.instance);
         this.players.add(player);
 
         player.setFlying(false);
@@ -118,8 +113,23 @@ public class ParkourTagGame extends Game {
         player.setGameMode(GameMode.ADVENTURE);
     }
 
+    @Override
+    public void onLeave(@NotNull Player player) {
+        player.setFlying(false);
+        player.setAllowFlying(false);
+        player.setAutoViewable(true);
+        player.setTeam(null);
+        player.setGlowing(false);
+        player.setGameMode(GameMode.ADVENTURE);
+    }
+
+    @Override
+    public @NotNull Instance getSpawningInstance() {
+        return this.instance;
+    }
+
     public void start() {
-        this.audience.playSound(Sound.sound(SoundEvent.BLOCK_PORTAL_TRIGGER, Sound.Source.MASTER, 0.45f, 1.27f));
+        this.playSound(Sound.sound(SoundEvent.BLOCK_PORTAL_TRIGGER, Sound.Source.MASTER, 0.45f, 1.27f));
 
         this.instance.scheduler().submitTask(new Supplier<>() {
             int i = 3;
@@ -131,9 +141,9 @@ public class ParkourTagGame extends Game {
                     return TaskSchedule.stop();
                 }
 
-                audience.playSound(Sound.sound(Key.key("battle.countdown.begin"), Sound.Source.MASTER, 1f, 1f), Sound.Emitter.self());
+                playSound(Sound.sound(Key.key("battle.countdown.begin"), Sound.Source.MASTER, 1f, 1f), Sound.Emitter.self());
 
-                audience.showTitle(
+                showTitle(
                         Title.title(
                                 Component.empty(),
                                 Component.text(i, NamedTextColor.LIGHT_PURPLE),
@@ -165,7 +175,7 @@ public class ParkourTagGame extends Game {
 
                 if (nameIter == 0) {
 
-                    audience.playSound(Sound.sound(SoundEvent.ENTITY_ENDER_DRAGON_GROWL, Sound.Source.MASTER, 0.8f, 1f), Sound.Emitter.self());
+                    playSound(Sound.sound(SoundEvent.ENTITY_ENDER_DRAGON_GROWL, Sound.Source.MASTER, 0.8f, 1f), Sound.Emitter.self());
 
                     // fancy rainbow name animation
                     instance.scheduler().submitTask(new Supplier<>() {
@@ -182,12 +192,10 @@ public class ParkourTagGame extends Game {
                                 return TaskSchedule.stop();
                             }
 
-                            String isTaggerString = "is the tagger";
-
-                            audience.showTitle(
+                            showTitle(
                                     Title.title(
                                             MINI_MESSAGE.deserialize("<rainbow:" + i + ">" + player.getUsername()),
-                                            Component.text(isTaggerString.substring(0, Math.min(i, isTaggerString.length())), NamedTextColor.GRAY),
+                                            Component.text("is the tagger", NamedTextColor.GRAY),
                                             Title.Times.times(Duration.ZERO, Duration.ofSeconds(3), Duration.ZERO)
                                     )
                             );
@@ -199,9 +207,9 @@ public class ParkourTagGame extends Game {
                     return TaskSchedule.stop();
                 }
 
-                audience.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_HAT, Sound.Source.MASTER, 1f, 1.5f));
+                playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_HAT, Sound.Source.MASTER, 1f, 1.5f));
 
-                audience.showTitle(
+                showTitle(
                         Title.title(
                                 Component.text(player.getUsername()),
                                 Component.empty(),
@@ -217,7 +225,7 @@ public class ParkourTagGame extends Game {
     }
 
     private void beginGame() {
-        audience.clearTitle();
+        clearTitle();
 
         Set<Player> taggers = getTaggers();
 
@@ -230,13 +238,15 @@ public class ParkourTagGame extends Game {
         );
         this.bossBar.color(BossBar.Color.GREEN);
 
+        String mapId = instance.getTag(MapManager.MAP_ID_TAG);
+
         var holderEntity = new Entity(EntityType.AREA_EFFECT_CLOUD);
         ((AreaEffectCloudMeta) holderEntity.getEntityMeta()).setRadius(0f);
-        holderEntity.setInstance(instance, SPAWN_POSITION_MAP.get("city").tagger.asPos()).thenRun(() -> {
+        holderEntity.setInstance(instance, SPAWN_POSITION_MAP.get(mapId).tagger.asPos()).thenRun(() -> {
             for (Player tagger : taggers) {
                 holderEntity.addPassenger(tagger);
                 tagger.setGlowing(true);
-                tagger.teleport(SPAWN_POSITION_MAP.get("city").tagger.asPos());
+                tagger.teleport(SPAWN_POSITION_MAP.get(mapId).tagger.asPos());
                 tagger.updateViewerRule((entity) -> entity.getEntityId() == holderEntity.getEntityId());
             }
 
@@ -248,8 +258,8 @@ public class ParkourTagGame extends Game {
                     if (secondsLeft == 0) { // Release tagger
                         allowHitPlayers = true;
 
-                        audience.sendActionBar(Component.text("The tagger has been released!", NamedTextColor.GOLD));
-                        audience.playSound(Sound.sound(SoundEvent.BLOCK_ANVIL_LAND, Sound.Source.MASTER, 0.3f, 2f));
+                        sendActionBar(Component.text("The tagger has been released!", NamedTextColor.GOLD));
+                        playSound(Sound.sound(SoundEvent.BLOCK_ANVIL_LAND, Sound.Source.MASTER, 0.3f, 2f));
 
                         beginTimer();
 
@@ -262,8 +272,8 @@ public class ParkourTagGame extends Game {
                     }
 
                     if (secondsLeft <= 3) {
-                        audience.sendActionBar(Component.text("The tagger will be released in " + secondsLeft + "s", NamedTextColor.RED));
-                        audience.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_HAT, Sound.Source.MASTER, 1.5f, 1.5f));
+                        sendActionBar(Component.text("The tagger will be released in " + secondsLeft + "s", NamedTextColor.RED));
+                        playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_HAT, Sound.Source.MASTER, 1.5f, 1.5f));
                     }
 
                     secondsLeft--;
@@ -278,7 +288,7 @@ public class ParkourTagGame extends Game {
             player.showBossBar(this.bossBar);
 
             if (player.getTeam() == null) { // if player is not tagger
-                player.teleport(SPAWN_POSITION_MAP.get("city").goon.asPos());
+                player.teleport(SPAWN_POSITION_MAP.get("ruins").goon.asPos());
                 player.setTeam(GOONS_TEAM);
                 goons.add(player);
             }
@@ -313,8 +323,8 @@ public class ParkourTagGame extends Game {
                 }
 
                 if (secondsLeft <= 10) {
-                    audience.playSound(Sound.sound(Key.key("minecraft:battle.showdown.count" + (secondsLeft % 2 + 1)), Sound.Source.MASTER, 0.7f, 1f), Sound.Emitter.self());
-                    audience.showTitle(
+                    playSound(Sound.sound(Key.key("minecraft:battle.showdown.count" + (secondsLeft % 2 + 1)), Sound.Source.MASTER, 0.7f, 1f), Sound.Emitter.self());
+                    showTitle(
                             Title.title(
                                     Component.empty(),
                                     Component.text(secondsLeft, TextColor.lerp(secondsLeft / 10f, NamedTextColor.RED, NamedTextColor.GREEN)),
@@ -324,8 +334,8 @@ public class ParkourTagGame extends Game {
                 }
 
                 if (secondsLeft == doubleJump) {
-                    audience.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_HAT, Sound.Source.MASTER, 1f, 1.5f), Sound.Emitter.self());
-                    audience.showTitle(
+                    playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_HAT, Sound.Source.MASTER, 1f, 1.5f), Sound.Emitter.self());
+                    showTitle(
                             Title.title(
                                     Component.empty(),
                                     Component.text("The tagger can now double jump!", NamedTextColor.GRAY),
@@ -338,8 +348,8 @@ public class ParkourTagGame extends Game {
                     }
                 }
                 if (secondsLeft == glowing) {
-                    audience.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_HAT, Sound.Source.MASTER, 1f, 1.5f), Sound.Emitter.self());
-                    audience.showTitle(
+                    playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_HAT, Sound.Source.MASTER, 1f, 1.5f), Sound.Emitter.self());
+                    showTitle(
                             Title.title(
                                     Component.empty(),
                                     Component.text("Goons are now glowing!", NamedTextColor.GRAY),
@@ -361,11 +371,11 @@ public class ParkourTagGame extends Game {
     }
 
     public void checkPlayerCounts() {
-        if (goons.size() == 0) {
+        if (goons.isEmpty()) {
             victory(taggers);
             return;
         }
-        if (taggers.size() == 0) {
+        if (taggers.isEmpty()) {
             victory(goons);
             return;
         }
@@ -426,31 +436,21 @@ public class ParkourTagGame extends Game {
         return allowHitPlayers;
     }
 
-    // TODO rework cancel system
-    @Override
-    public void cancel() {
-        LOGGER.warn("Game cancelled");
-        sendBackToLobby();
-    }
-
     private void sendBackToLobby() {
         for (final Player player : players) {
             player.setTeam(null);
         }
-        KurushimiMinestomUtils.sendToLobby(players, this::removeGame, this::removeGame);
+        finish();
     }
 
-    private void removeGame() {
-        GameSdkModule.getGameManager().removeGame(this);
-        cleanUp();
-    }
-
-    private void cleanUp() {
+    @Override
+    public void cleanUp() {
         for (final Player player : this.players) {
             player.kick(Component.text("The game ended but we weren't able to connect you to a lobby. Please reconnect", NamedTextColor.RED));
         }
         MinecraftServer.getInstanceManager().unregisterInstance(this.instance);
         MinecraftServer.getBossBarManager().destroyBossBar(this.bossBar);
         if (this.gameTimerTask != null) this.gameTimerTask.cancel();
+        MinecraftServer.getInstanceManager().unregisterInstance(this.instance);
     }
 }

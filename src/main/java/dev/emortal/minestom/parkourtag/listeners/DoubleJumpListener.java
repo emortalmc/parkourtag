@@ -25,7 +25,7 @@ public class DoubleJumpListener {
             e.getPlayer().setFlying(false);
             e.getPlayer().setVelocity(playerPos.direction().mul(20.0).withY(y -> Math.max(y, 8.0)));
 
-            game.getAudience().playSound(Sound.sound(SoundEvent.ENTITY_GENERIC_EXPLODE, Sound.Source.MASTER, 1f, 1.5f), playerPos.x(), playerPos.y(), playerPos.z());
+            game.playSound(Sound.sound(SoundEvent.ENTITY_GENERIC_EXPLODE, Sound.Source.MASTER, 1f, 1.5f), playerPos.x(), playerPos.y(), playerPos.z());
 
             e.getInstance().scheduler().submitTask(new Supplier<>() {
                 int secondsLeft = 3;

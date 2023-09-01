@@ -75,7 +75,7 @@ public class AttackListener {
 
             // Pick a random death message
             ThreadLocalRandom random = ThreadLocalRandom.current();
-            game.getAudience().sendMessage(MiniMessage.miniMessage().deserialize(
+            game.sendMessage(MiniMessage.miniMessage().deserialize(
                     "<gray>" +
                             DEATH_MESSAGES.get(random.nextInt(DEATH_MESSAGES.size())),
                     Placeholder.component("victim", Component.text(target.getUsername(), NamedTextColor.RED)),

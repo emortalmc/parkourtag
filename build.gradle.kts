@@ -1,6 +1,6 @@
 plugins {
     id("java")
-    id("com.github.johnrengelman.shadow") version "7.1.2"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 group = "dev.emortal.minestom.parkourtag"
@@ -18,12 +18,18 @@ repositories {
 }
 
 dependencies {
-    implementation("dev.hollowcube:polar:1.2.0")
+    implementation("dev.hollowcube:polar:1.3.1")
 
-    implementation("dev.emortal.minestom:core:5eeef1f")
-    implementation("dev.emortal.minestom:game-sdk:4d22719")
+    implementation("dev.emortal.minestom:core:9c52249")
+    implementation("dev.emortal.minestom:game-sdk:f6d9300")
 
-    implementation("net.kyori:adventure-text-minimessage:4.12.0")
+    implementation("net.kyori:adventure-text-minimessage:4.14.0")
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(20))
+    }
 }
 
 tasks {
