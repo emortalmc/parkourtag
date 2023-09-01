@@ -117,6 +117,7 @@ public class ParkourTagGame extends Game {
         player.setTeam(null);
         player.setGlowing(false);
         player.setGameMode(GameMode.ADVENTURE);
+        checkPlayerCounts();
     }
 
     @Override
