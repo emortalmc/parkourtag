@@ -1,6 +1,6 @@
-package dev.emortal.minestom.parkourtag.listeners;
+package dev.emortal.minestom.parkourtag.listeners.infection;
 
-import dev.emortal.minestom.parkourtag.ParkourTagGame;
+import dev.emortal.minestom.parkourtag.InfectionGame;
 import dev.emortal.minestom.parkourtag.utils.FireworkUtils;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class AttackListener {
+public class InfectionAttackListener {
 
     private static final List<String> DEATH_MESSAGES = List.of(
             "<victim> was found by <tagger>",
@@ -45,8 +45,8 @@ public class AttackListener {
 
     private static final Tag<Long> HIT_COOLDOWN = Tag.Long("hitCooldown");
 
-    public static void registerListener(EventNode<InstanceEvent> eventNode, ParkourTagGame game) {
-        Set<Player> taggers = game.getTaggers();
+    public static void registerListener(EventNode<InstanceEvent> eventNode, InfectionGame game) {
+        Set<Player> infected = game.getInfected();
 
         eventNode.addListener(EntityAttackEvent.class, e -> {
             if (!game.canHitPlayers()) return;
@@ -59,7 +59,7 @@ public class AttackListener {
             if (attacker.getGameMode() != GameMode.ADVENTURE) return;
             if (target.getGameMode() != GameMode.ADVENTURE) return;
 
-            if (game.isVictorying() && taggers.contains(target)) { // Attacking tagger after victory
+            if (game.isVictorying() && infected.contains(target)) { // Attacking tagger after victory
                 if (!target.hasTag(HIT_COOLDOWN)) target.setTag(HIT_COOLDOWN, System.currentTimeMillis());
                 if (target.getTag(HIT_COOLDOWN) > System.currentTimeMillis()) return;
                 target.setTag(HIT_COOLDOWN, System.currentTimeMillis() + 500);
@@ -73,24 +73,21 @@ public class AttackListener {
                 return;
             }
 
-            if (taggers.contains(target)) return;
+            if (infected.contains(target)) return;
 
             attacker.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_PLING, Sound.Source.MASTER, 1f, 1f), Sound.Emitter.self());
             target.showTitle(
                     Title.title(
-                            Component.text("YOU DIED", NamedTextColor.RED, TextDecoration.BOLD),
-                            Component.empty(),
+                            Component.text("INFECTED", NamedTextColor.GREEN, TextDecoration.BOLD),
+                            Component.text("Infect all the goons!", NamedTextColor.GRAY),
                             Title.Times.times(Duration.ZERO, Duration.ofMillis(1000), Duration.ofMillis(500))
                     )
             );
 
-            target.setGameMode(GameMode.SPECTATOR);
-            target.setAutoViewable(false);
-            target.setGlowing(false);
-
-            game.getTaggers().remove(target);
+            game.getInfected().add(target);
             game.getGoons().remove(target);
-            target.setTeam(ParkourTagGame.DEAD_TEAM);
+            target.setGlowing(true);
+            target.setTeam(InfectionGame.INFECTED_TEAM);
 
             // Pick a random death message
             ThreadLocalRandom random = ThreadLocalRandom.current();

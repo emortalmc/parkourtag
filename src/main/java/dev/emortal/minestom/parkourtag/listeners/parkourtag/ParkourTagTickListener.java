@@ -1,4 +1,4 @@
-package dev.emortal.minestom.parkourtag.listeners;
+package dev.emortal.minestom.parkourtag.listeners.parkourtag;
 
 import dev.emortal.minestom.parkourtag.ParkourTagGame;
 import net.kyori.adventure.sound.Sound;
@@ -15,7 +15,7 @@ import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.tag.Tag;
 import net.minestom.server.timer.TaskSchedule;
 
-public class TickListener {
+public class ParkourTagTickListener {
 
     private static final Tag<Boolean> launchCooldownTag = Tag.Boolean("launchCooldown");
 

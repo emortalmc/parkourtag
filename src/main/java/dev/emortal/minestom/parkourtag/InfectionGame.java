@@ -4,9 +4,8 @@ import com.google.common.collect.Sets;
 import dev.emortal.minestom.core.Environment;
 import dev.emortal.minestom.gamesdk.config.GameCreationInfo;
 import dev.emortal.minestom.gamesdk.game.Game;
-import dev.emortal.minestom.parkourtag.listeners.parkourtag.ParkourTagAttackListener;
-import dev.emortal.minestom.parkourtag.listeners.parkourtag.ParkourTagDoubleJumpListener;
-import dev.emortal.minestom.parkourtag.listeners.parkourtag.ParkourTagTickListener;
+import dev.emortal.minestom.parkourtag.listeners.infection.InfectionAttackListener;
+import dev.emortal.minestom.parkourtag.listeners.infection.InfectionTickListener;
 import dev.emortal.minestom.parkourtag.map.MapManager;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.key.Key;
@@ -46,32 +45,26 @@ import java.util.function.Supplier;
 
 import static dev.emortal.minestom.parkourtag.Main.SPAWN_POSITION_MAP;
 
-public class ParkourTagGame extends Game {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ParkourTagGame.class);
+public class InfectionGame extends Game {
+    private static final Logger LOGGER = LoggerFactory.getLogger(InfectionGame.class);
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
 
     private static final Pos SPAWN_POINT = new Pos(0.5, 65.0, 0.5);
 
-    public static final Team TAGGER_TEAM = MinecraftServer.getTeamManager().createBuilder("taggers")
-            .teamColor(NamedTextColor.RED)
+    public static final Team INFECTED_TEAM = MinecraftServer.getTeamManager().createBuilder("infected")
+            .teamColor(NamedTextColor.GREEN)
             .nameTagVisibility(TeamsPacket.NameTagVisibility.ALWAYS)
             .updateTeamPacket()
             .build();
-    public static final Team GOONS_TEAM = MinecraftServer.getTeamManager().createBuilder("goons")
+    public static final Team SANITARY_TEAM = MinecraftServer.getTeamManager().createBuilder("sanitary")
             .teamColor(NamedTextColor.GREEN)
             .nameTagVisibility(TeamsPacket.NameTagVisibility.HIDE_FOR_OTHER_TEAMS)
-            .updateTeamPacket()
-            .build();
-    public static final Team DEAD_TEAM = MinecraftServer.getTeamManager().createBuilder("dead")
-            .teamColor(NamedTextColor.GRAY)
-            .prefix(Component.text("☠ ", NamedTextColor.GRAY))
-            .nameTagVisibility(TeamsPacket.NameTagVisibility.NEVER)
             .updateTeamPacket()
             .build();
 
     public static final int MIN_PLAYERS = 2;
 
-    private final Set<Player> taggers = Sets.newConcurrentHashSet();
+    private final Set<Player> infected = Sets.newConcurrentHashSet();
     private final Set<Player> goons = Sets.newConcurrentHashSet();
 
     public final @NotNull Instance instance;
@@ -83,7 +76,7 @@ public class ParkourTagGame extends Game {
 
     private @Nullable Task gameTimerTask;
 
-    protected ParkourTagGame(@NotNull GameCreationInfo creationInfo, @NotNull Instance instance) {
+    protected InfectionGame(@NotNull GameCreationInfo creationInfo, @NotNull Instance instance) {
         super(creationInfo);
 
         instance.setTimeRate(0);
@@ -138,7 +131,7 @@ public class ParkourTagGame extends Game {
             @Override
             public TaskSchedule get() {
                 if (i == 0) {
-                    pickTagger();
+                    pickInfected();
                     return TaskSchedule.stop();
                 }
 
@@ -158,7 +151,7 @@ public class ParkourTagGame extends Game {
         });
     }
 
-    private void pickTagger() {
+    private void pickInfected() {
         ThreadLocalRandom random = ThreadLocalRandom.current();
 
         this.instance.scheduler().submitTask(new Supplier<>() {
@@ -186,8 +179,8 @@ public class ParkourTagGame extends Game {
                         public TaskSchedule get() {
                             if (i >= 30) {
                                 // finally begin the game!!
-                                player.setTeam(TAGGER_TEAM);
-                                taggers.add(player);
+                                player.setTeam(INFECTED_TEAM);
+                                infected.add(player);
 
                                 beginGame();
                                 return TaskSchedule.stop();
@@ -196,7 +189,7 @@ public class ParkourTagGame extends Game {
                             showTitle(
                                     Title.title(
                                             MINI_MESSAGE.deserialize("<rainbow:" + i + ">" + player.getUsername()),
-                                            Component.text("is the tagger", NamedTextColor.GRAY),
+                                            Component.text("is infected", NamedTextColor.GRAY),
                                             Title.Times.times(Duration.ZERO, Duration.ofSeconds(3), Duration.ZERO)
                                     )
                             );
@@ -228,7 +221,7 @@ public class ParkourTagGame extends Game {
     private void beginGame() {
         clearTitle();
 
-        Set<Player> taggers = getTaggers();
+        Set<Player> taggers = getInfected();
 
         int goonsLeft = this.players.size() - 1;
         this.bossBar.name(
@@ -251,8 +244,8 @@ public class ParkourTagGame extends Game {
                 tagger.updateViewerRule((entity) -> entity.getEntityId() == holderEntity.getEntityId());
                 tagger.showTitle(
                         Title.title(
-                                Component.text("TAGGER", NamedTextColor.RED, TextDecoration.BOLD),
-                                Component.text("Tag all the goons!", NamedTextColor.GRAY),
+                                Component.text("INFECTED", NamedTextColor.GREEN, TextDecoration.BOLD),
+                                Component.text("Infect all the goons!", NamedTextColor.GRAY),
                                 Title.Times.times(Duration.ZERO, Duration.ofMillis(1500), Duration.ofMillis(500))
                         )
                 );
@@ -290,16 +283,18 @@ public class ParkourTagGame extends Game {
             });
         });
 
+
+
         for (Player player : this.players) {
             player.showBossBar(this.bossBar);
 
             if (player.getTeam() == null) { // if player is not tagger
                 player.teleport(SPAWN_POSITION_MAP.get(mapId).goon.asPos());
-                player.setTeam(GOONS_TEAM);
+                player.setTeam(SANITARY_TEAM);
                 player.showTitle(
                         Title.title(
                                 Component.text("GOON", NamedTextColor.GREEN, TextDecoration.BOLD),
-                                Component.text("Run away from the tagger!", NamedTextColor.GRAY),
+                                Component.text("Run away from the infected!", NamedTextColor.GRAY),
                                 Title.Times.times(Duration.ZERO, Duration.ofMillis(1500), Duration.ofMillis(500))
                         )
                 );
@@ -308,9 +303,8 @@ public class ParkourTagGame extends Game {
         }
 
         EventNode<InstanceEvent> eventNode = instance.eventNode();
-        ParkourTagAttackListener.registerListener(eventNode, this);
-        ParkourTagTickListener.registerListener(eventNode, this);
-        ParkourTagDoubleJumpListener.registerListener(eventNode, this);
+        InfectionAttackListener.registerListener(eventNode, this);
+        InfectionTickListener.registerListener(eventNode, this);
     }
 
     private void beginTimer() {
@@ -351,7 +345,7 @@ public class ParkourTagGame extends Game {
                             )
                     );
 
-                    for (Player tagger : taggers) {
+                    for (Player tagger : infected) {
                         tagger.setAllowFlying(true);
                     }
                 }
@@ -380,10 +374,10 @@ public class ParkourTagGame extends Game {
 
     public void checkPlayerCounts() {
         if (goons.isEmpty()) {
-            victory(taggers);
+            victory(infected);
             return;
         }
-        if (taggers.isEmpty()) {
+        if (infected.isEmpty()) {
             victory(goons);
             return;
         }
@@ -436,8 +430,8 @@ public class ParkourTagGame extends Game {
         return goons;
     }
 
-    public @NotNull Set<Player> getTaggers() {
-        return taggers;
+    public @NotNull Set<Player> getInfected() {
+        return infected;
     }
 
     public boolean canHitPlayers() {

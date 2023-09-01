@@ -1,4 +1,4 @@
-package dev.emortal.minestom.parkourtag.listeners;
+package dev.emortal.minestom.parkourtag.listeners.parkourtag;
 
 import dev.emortal.minestom.parkourtag.ParkourTagGame;
 import net.kyori.adventure.sound.Sound;
@@ -15,7 +15,7 @@ import net.minestom.server.timer.TaskSchedule;
 
 import java.util.function.Supplier;
 
-public class DoubleJumpListener {
+public class ParkourTagDoubleJumpListener {
 
     public static void registerListener(EventNode<InstanceEvent> eventNode, ParkourTagGame game) {
         eventNode.addListener(PlayerStartFlyingEvent.class, e -> {
