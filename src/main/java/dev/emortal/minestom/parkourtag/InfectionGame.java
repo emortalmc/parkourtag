@@ -24,7 +24,6 @@ import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.entity.metadata.other.AreaEffectCloudMeta;
 import net.minestom.server.event.EventNode;
-import net.minestom.server.event.player.PlayerDisconnectEvent;
 import net.minestom.server.event.trait.InstanceEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.network.packet.server.play.TeamsPacket;
@@ -82,10 +81,6 @@ public class InfectionGame extends Game {
         instance.setTimeRate(0);
         instance.setTimeUpdate(null);
         this.instance = instance;
-
-        getEventNode().addListener(PlayerDisconnectEvent.class, event -> {
-            if (this.players.remove(event.getPlayer())) this.checkPlayerCounts();
-        });
     }
 
     @Override
