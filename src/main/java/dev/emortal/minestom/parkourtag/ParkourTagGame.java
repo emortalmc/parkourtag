@@ -77,6 +77,7 @@ public class ParkourTagGame extends Game {
     public final @NotNull Instance instance;
 
     private boolean allowHitPlayers = false;
+    private boolean victorying = false;
 
     private final BossBar bossBar = BossBar.bossBar(Component.empty(), 0f, BossBar.Color.PINK, BossBar.Overlay.PROGRESS);
 
@@ -389,7 +390,7 @@ public class ParkourTagGame extends Game {
     }
 
     private void victory(Set<Player> winners) {
-        allowHitPlayers = false;
+        victorying = true;
 
         if (gameTimerTask != null) gameTimerTask.cancel();
 
@@ -434,6 +435,10 @@ public class ParkourTagGame extends Game {
 
     public boolean canHitPlayers() {
         return allowHitPlayers;
+    }
+
+    public boolean isVictorying() {
+        return victorying;
     }
 
     private void sendBackToLobby() {

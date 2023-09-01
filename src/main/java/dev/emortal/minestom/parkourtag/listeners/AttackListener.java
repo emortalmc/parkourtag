@@ -18,7 +18,9 @@ import net.minestom.server.event.entity.EntityAttackEvent;
 import net.minestom.server.event.trait.InstanceEvent;
 import net.minestom.server.item.firework.FireworkEffect;
 import net.minestom.server.item.firework.FireworkEffectType;
+import net.minestom.server.network.packet.server.play.HitAnimationPacket;
 import net.minestom.server.sound.SoundEvent;
+import net.minestom.server.tag.Tag;
 
 import java.time.Duration;
 import java.util.List;
@@ -41,12 +43,13 @@ public class AttackListener {
             "<victim> failed <tagger>'s expectations"
     );
 
+    private static final Tag<Long> HIT_COOLDOWN = Tag.Long("hitCooldown");
+
     public static void registerListener(EventNode<InstanceEvent> eventNode, ParkourTagGame game) {
         Set<Player> taggers = game.getTaggers();
 
         eventNode.addListener(EntityAttackEvent.class, e -> {
             if (!game.canHitPlayers()) return;
-            if (!taggers.contains(e.getEntity())) return;
             if (e.getEntity().getEntityType() != EntityType.PLAYER) return;
             if (e.getTarget().getEntityType() != EntityType.PLAYER) return;
 
@@ -55,6 +58,22 @@ public class AttackListener {
 
             if (attacker.getGameMode() != GameMode.ADVENTURE) return;
             if (target.getGameMode() != GameMode.ADVENTURE) return;
+
+            if (game.isVictorying() && taggers.contains(target)) { // Attacking tagger after victory
+                if (!target.hasTag(HIT_COOLDOWN)) target.setTag(HIT_COOLDOWN, System.currentTimeMillis());
+                if (target.getTag(HIT_COOLDOWN) > System.currentTimeMillis()) return;
+                target.setTag(HIT_COOLDOWN, System.currentTimeMillis() + 500);
+
+                target.takeKnockback(0.4f, Math.sin(Math.toRadians(attacker.getPosition().yaw())), -Math.cos(Math.toRadians(attacker.getPosition().yaw())));
+                HitAnimationPacket hitAnimationPacket = new HitAnimationPacket(target.getEntityId(), attacker.getPosition().yaw());
+                game.playSound(Sound.sound(SoundEvent.ENTITY_PLAYER_HURT, Sound.Source.PLAYER, 1f, 1f), target.getPosition());
+
+                game.sendGroupedPacket(hitAnimationPacket);
+
+                return;
+            }
+
+            if (taggers.contains(target)) return;
 
             attacker.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_PLING, Sound.Source.MASTER, 1f, 1f), Sound.Emitter.self());
             target.showTitle(

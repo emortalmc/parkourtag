@@ -30,7 +30,7 @@ public class TickListener {
             Pos playerPos = player.getPosition();
 
             // Note block sound based on distance to tagger
-            if (game.getTaggers().contains(player)) {
+            if (!game.isVictorying() && game.getTaggers().contains(player)) {
                 for (Player goon : game.getGoons()) {
                     double distance = goon.getPosition().distanceSquared(playerPos);
                     if (distance > 25*25) continue;
