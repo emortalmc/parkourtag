@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-jre
+FROM --platform=$BUILDPLATFORM eclipse-temurin:20-jre
 
 RUN mkdir /app
 WORKDIR /app
@@ -10,4 +10,4 @@ RUN apt-get install wget \
 COPY build/libs/*-all.jar /app/parkour_tag.jar
 COPY run/maps/*.polar /app/maps/
 
-CMD ["java", "-jar", "/app/parkour_tag.jar"]
+CMD ["java", "--enable-preview", "-jar", "/app/parkour_tag.jar"]

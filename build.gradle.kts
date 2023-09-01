@@ -38,7 +38,7 @@ tasks {
 
         manifest {
             attributes(
-                "Main-Class" to "dev.emortal.minestom.parkourtag.Entrypoint",
+                "Main-Class" to "dev.emortal.minestom.parkourtag.Main",
                 "Multi-Release" to true
             )
         }
