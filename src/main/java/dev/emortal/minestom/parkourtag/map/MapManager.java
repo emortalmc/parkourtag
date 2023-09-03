@@ -1,10 +1,6 @@
 package dev.emortal.minestom.parkourtag.map;
 
-import net.hollowcube.polar.AnvilPolar;
-import net.hollowcube.polar.ChunkSelector;
-import net.hollowcube.polar.PolarLoader;
-import net.hollowcube.polar.PolarWorld;
-import net.hollowcube.polar.PolarWriter;
+import net.hollowcube.polar.*;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
@@ -33,8 +29,8 @@ public class MapManager {
             .build();
 
     private static final List<String> ENABLED_MAPS = List.of(
-            "city",
-            "ruins"
+            "city"
+//            "ruins"
     );
     private static final Path MAPS_PATH = Path.of("maps");
     public static final Tag<String> MAP_ID_TAG = Tag.String("mapId");

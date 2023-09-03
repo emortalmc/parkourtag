@@ -2,6 +2,7 @@ package dev.emortal.minestom.parkourtag;
 
 import com.google.common.collect.Sets;
 import dev.emortal.minestom.core.Environment;
+import dev.emortal.minestom.gamesdk.MinestomGameServer;
 import dev.emortal.minestom.gamesdk.config.GameCreationInfo;
 import dev.emortal.minestom.gamesdk.game.Game;
 import dev.emortal.minestom.parkourtag.listeners.infection.InfectionAttackListener;
@@ -151,7 +152,7 @@ public class InfectionGame extends Game {
         ThreadLocalRandom random = ThreadLocalRandom.current();
 
         this.instance.scheduler().submitTask(new Supplier<>() {
-            int nameIter = 15;
+            int nameIter = MinestomGameServer.TEST_MODE ? 3 : 15;
             final int offset = random.nextInt(players.size());
 
             @Override
@@ -248,7 +249,7 @@ public class InfectionGame extends Game {
             }
 
             instance.scheduler().submitTask(new Supplier<>() {
-                int secondsLeft = 7;
+                int secondsLeft = MinestomGameServer.TEST_MODE ? 2 : 7;
 
                 @Override
                 public TaskSchedule get() {
