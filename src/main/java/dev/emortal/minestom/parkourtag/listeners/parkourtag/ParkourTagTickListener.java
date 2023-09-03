@@ -108,7 +108,6 @@ public class ParkourTagTickListener {
 
         instance.scheduler().buildTask(() -> {
             instance.scheduler().submitTask(() -> {
-                System.out.println("toggled light");
                 if (entity.getTag(onTag)) {
                     // turn off
                     meta.setText(off);
