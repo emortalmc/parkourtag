@@ -30,14 +30,14 @@ public class InfectionTickListener {
 
     private static final Tag<Boolean> launchCooldownTag = Tag.Boolean("launchCooldown");
 
-    public static void registerListener(EventNode<InstanceEvent> eventNode, InfectionGame game) {
-        if (game.instance.getTag(MapManager.MAP_ID_TAG).equals("city")) {
-            createRailParticle(3, 60, -16, game);
-            createRailParticle(5, 61, -18, game);
+    public static void registerListener(EventNode<InstanceEvent> eventNode, InfectionGame game, Instance instance) {
+        if (instance.getTag(MapManager.MAP_ID_TAG).equals("city")) {
+            createRailParticle(3, 60, -16, game, instance);
+            createRailParticle(5, 61, -18, game, instance);
 
-            createRailTextDisplay(5.163, 62.5, -18.999, 1, game.instance);
-            createRailTextDisplay(5.163, 63.25, -18.999, 2, game.instance);
-            createRailTextDisplay(5.163, 64, -18.999, 3, game.instance);
+            createRailTextDisplay(5.163, 62.5, -18.999, 1, instance);
+            createRailTextDisplay(5.163, 63.25, -18.999, 2, instance);
+            createRailTextDisplay(5.163, 64, -18.999, 3, instance);
         }
 
         eventNode.addListener(EntityTickEvent.class, e -> {
@@ -78,11 +78,11 @@ public class InfectionTickListener {
         });
     }
 
-    private static void createRailParticle(double x, double y, double z, InfectionGame game) {
+    private static void createRailParticle(double x, double y, double z, InfectionGame game, Instance instance) {
         double spinSpeed = 0.35;
         double spinScale = 0.9;
-        game.instance.scheduler().buildTask(() -> {
-            double tick = game.instance.getWorldAge();
+        instance.scheduler().buildTask(() -> {
+            double tick = instance.getWorldAge();
 
             ParticlePacket packet = ParticleCreator.createParticlePacket(Particle.SNOWFLAKE, true, x + Math.sin(tick * spinSpeed) * spinScale, y, z + Math.cos(tick * spinSpeed) * spinScale, 0f, 0.5f, 0f, 1f, 0, null);
 

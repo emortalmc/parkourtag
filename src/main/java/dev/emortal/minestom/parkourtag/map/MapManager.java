@@ -1,6 +1,8 @@
 package dev.emortal.minestom.parkourtag.map;
 
-import net.hollowcube.polar.*;
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
+import net.hollowcube.polar.PolarLoader;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
@@ -13,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -20,8 +23,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class MapManager {
+public final class MapManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(MapManager.class);
+    private static final Gson GSON = new Gson();
 
     private static final DimensionType DIMENSION_TYPE = DimensionType.builder(NamespaceID.from("emortalmc:parkourtag"))
             .skylightEnabled(true)
@@ -29,34 +33,30 @@ public class MapManager {
             .build();
 
     private static final List<String> ENABLED_MAPS = List.of(
-            "city"
-//            "ruins"
+            "city",
+            "ruins"
     );
     private static final Path MAPS_PATH = Path.of("maps");
     public static final Tag<String> MAP_ID_TAG = Tag.String("mapId");
 
     private static final int CHUNK_LOADING_RADIUS = 3;
 
-    private final Map<String, InstanceContainer> mapInstances;
+    private final Map<String, PreLoadedMap> preLoadedMaps;
 
     public MapManager() {
         MinecraftServer.getDimensionTypeManager().addDimension(DIMENSION_TYPE);
 
-        Map<String, InstanceContainer> instances = new HashMap<>();
-
+        Map<String, PreLoadedMap> maps = new HashMap<>();
         for (String mapName : ENABLED_MAPS) {
-            final Path polarPath = MAPS_PATH.resolve(mapName + ".polar");
-            final Path anvilPath = MAPS_PATH.resolve(mapName);
+            Path mapPath = MAPS_PATH.resolve(mapName);
+            Path polarPath = mapPath.resolve("map.polar");
+            Path spawnsPath = mapPath.resolve("spawns.json");
 
             try {
-                PolarLoader polarLoader;
-                if (!Files.exists(polarPath)) { // File needs to be converted
-                    PolarWorld world = AnvilPolar.anvilToPolar(anvilPath, ChunkSelector.radius(CHUNK_LOADING_RADIUS));
-                    Files.write(polarPath, PolarWriter.write(world));
-                    polarLoader = new PolarLoader(world);
-                } else {
-                    polarLoader = new PolarLoader(polarPath);
-                }
+                MapSpawns spawns = GSON.fromJson(new JsonReader(Files.newBufferedReader(spawnsPath)), MapSpawns.class);
+                LOGGER.info("Loaded spawns for map {}: [{}]", mapName, spawns);
+
+                PolarLoader polarLoader = new PolarLoader(polarPath);
 
                 InstanceContainer instance = MinecraftServer.getInstanceManager().createInstanceContainer(DIMENSION_TYPE, polarLoader);
                 instance.setTimeRate(0);
@@ -69,39 +69,46 @@ public class MapManager {
                     }
                 }
 
-                instances.put(mapName, instance);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+                maps.put(mapName, new PreLoadedMap(instance, spawns));
+            } catch (IOException exception) {
+                throw new UncheckedIOException(exception);
             }
         }
 
-        this.mapInstances = Map.copyOf(instances);
+        this.preLoadedMaps = Map.copyOf(maps);
     }
 
-    public @NotNull Instance getMap(@Nullable String id) {
-        if (id == null) return this.getRandomMap();
+    public @NotNull LoadedMap getMap(@Nullable String id) {
+        if (id == null) {
+            return this.getRandomMap();
+        }
 
-        final InstanceContainer instance = this.mapInstances.get(id);
-        if (instance == null) {
+        PreLoadedMap map = this.preLoadedMaps.get(id);
+        if (map == null) {
             LOGGER.warn("Map {} not found, loading random map", id);
             return this.getRandomMap();
         }
 
-        LOGGER.info("Creating instance for map {}", id);
-
-        Instance shared = MinecraftServer.getInstanceManager().createSharedInstance(instance);
-        shared.setTag(MAP_ID_TAG, id);
-
-        return shared;
+        return map.load(id);
     }
 
-    public @NotNull Instance getRandomMap() {
-        final String randomMapId = ENABLED_MAPS.get(ThreadLocalRandom.current().nextInt(ENABLED_MAPS.size()));
-        final InstanceContainer instance = this.mapInstances.get(randomMapId);
+    public @NotNull LoadedMap getRandomMap() {
+        String randomMapId = ENABLED_MAPS.get(ThreadLocalRandom.current().nextInt(ENABLED_MAPS.size()));
 
-        Instance shared = MinecraftServer.getInstanceManager().createSharedInstance(instance);
-        shared.setTag(MAP_ID_TAG, randomMapId);
+        PreLoadedMap map = this.preLoadedMaps.get(randomMapId);
+        return map.load(randomMapId);
+    }
 
-        return shared;
+    private record PreLoadedMap(@NotNull InstanceContainer rootInstance, @NotNull MapSpawns spawns) {
+
+        @NotNull LoadedMap load(@NotNull String mapId) {
+            Instance shared = MinecraftServer.getInstanceManager().createSharedInstance(this.rootInstance());
+
+            shared.setTag(MAP_ID_TAG, mapId);
+            shared.setTimeRate(0);
+            shared.setTimeUpdate(null);
+
+            return new LoadedMap(shared, this.spawns());
+        }
     }
 }

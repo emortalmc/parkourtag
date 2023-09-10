@@ -1,14 +1,15 @@
 package dev.emortal.minestom.parkourtag;
 
 import com.google.common.collect.Sets;
-import dev.emortal.minestom.core.Environment;
 import dev.emortal.minestom.gamesdk.MinestomGameServer;
 import dev.emortal.minestom.gamesdk.config.GameCreationInfo;
 import dev.emortal.minestom.gamesdk.game.Game;
 import dev.emortal.minestom.parkourtag.listeners.parkourtag.ParkourTagAttackListener;
 import dev.emortal.minestom.parkourtag.listeners.parkourtag.ParkourTagDoubleJumpListener;
 import dev.emortal.minestom.parkourtag.listeners.parkourtag.ParkourTagTickListener;
+import dev.emortal.minestom.parkourtag.map.LoadedMap;
 import dev.emortal.minestom.parkourtag.map.MapManager;
+import dev.emortal.minestom.parkourtag.map.MapSpawns;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
@@ -35,8 +36,6 @@ import net.minestom.server.timer.Task;
 import net.minestom.server.timer.TaskSchedule;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Iterator;
@@ -44,10 +43,7 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 
-import static dev.emortal.minestom.parkourtag.Main.SPAWN_POSITION_MAP;
-
 public class ParkourTagGame extends Game {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ParkourTagGame.class);
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
 
     private static final Pos SPAWN_POINT = new Pos(0.5, 65.0, 0.5);
@@ -71,43 +67,31 @@ public class ParkourTagGame extends Game {
 
     public static final int MIN_PLAYERS = 2;
 
+    private final @NotNull LoadedMap map;
+
     private final Set<Player> taggers = Sets.newConcurrentHashSet();
     private final Set<Player> goons = Sets.newConcurrentHashSet();
-
-    public final @NotNull Instance instance;
+    private final BossBar bossBar = BossBar.bossBar(Component.empty(), 0f, BossBar.Color.PINK, BossBar.Overlay.PROGRESS);
 
     private boolean allowHitPlayers = false;
     private boolean victorying = false;
-
-    private final BossBar bossBar = BossBar.bossBar(Component.empty(), 0f, BossBar.Color.PINK, BossBar.Overlay.PROGRESS);
-
     private @Nullable Task gameTimerTask;
 
-    protected ParkourTagGame(@NotNull GameCreationInfo creationInfo, @NotNull Instance instance) {
+    protected ParkourTagGame(@NotNull GameCreationInfo creationInfo, @NotNull LoadedMap map) {
         super(creationInfo);
-
-        instance.setTimeRate(0);
-        instance.setTimeUpdate(null);
-        this.instance = instance;
+        this.map = map;
     }
 
     @Override
     public void onJoin(Player player) {
-        if (!getCreationInfo().playerIds().contains(player.getUuid())) {
-            player.kick("Unexpected join (" + Environment.getHostname() + ")");
-            LOGGER.info("Unexpected join for player {}", player.getUuid());
-            return;
-        }
-
-        player.setRespawnPoint(SPAWN_POINT);
-        this.players.add(player);
-
         player.setFlying(false);
         player.setAllowFlying(false);
         player.setAutoViewable(true);
         player.setTeam(null);
         player.setGlowing(false);
         player.setGameMode(GameMode.ADVENTURE);
+
+        player.setRespawnPoint(SPAWN_POINT);
     }
 
     @Override
@@ -118,18 +102,19 @@ public class ParkourTagGame extends Game {
         player.setTeam(null);
         player.setGlowing(false);
         player.setGameMode(GameMode.ADVENTURE);
-        checkPlayerCounts();
+
+        this.checkPlayerCounts();
     }
 
     @Override
     public @NotNull Instance getSpawningInstance() {
-        return this.instance;
+        return this.map.instance();
     }
 
     public void start() {
         this.playSound(Sound.sound(SoundEvent.BLOCK_PORTAL_TRIGGER, Sound.Source.MASTER, 0.45f, 1.27f));
 
-        this.instance.scheduler().submitTask(new Supplier<>() {
+        this.map.instance().scheduler().submitTask(new Supplier<>() {
             int i = 3;
 
             @Override
@@ -158,7 +143,7 @@ public class ParkourTagGame extends Game {
     private void pickTagger() {
         ThreadLocalRandom random = ThreadLocalRandom.current();
 
-        this.instance.scheduler().submitTask(new Supplier<>() {
+        this.map.instance().scheduler().submitTask(new Supplier<>() {
             int nameIter = MinestomGameServer.TEST_MODE ? 3 : 15;
             final int offset = random.nextInt(players.size());
 
@@ -176,7 +161,7 @@ public class ParkourTagGame extends Game {
                     playSound(Sound.sound(SoundEvent.ENTITY_ENDER_DRAGON_GROWL, Sound.Source.MASTER, 0.8f, 1f), Sound.Emitter.self());
 
                     // fancy rainbow name animation
-                    instance.scheduler().submitTask(new Supplier<>() {
+                    map.instance().scheduler().submitTask(new Supplier<>() {
                         int i = 0;
 
                         @Override
@@ -236,15 +221,17 @@ public class ParkourTagGame extends Game {
         );
         this.bossBar.color(BossBar.Color.GREEN);
 
-        String mapId = instance.getTag(MapManager.MAP_ID_TAG);
+        String mapId = this.map.instance().getTag(MapManager.MAP_ID_TAG);
 
         var holderEntity = new Entity(EntityType.AREA_EFFECT_CLOUD);
         ((AreaEffectCloudMeta) holderEntity.getEntityMeta()).setRadius(0f);
-        holderEntity.setInstance(instance, SPAWN_POSITION_MAP.get(mapId).tagger.asPos()).thenRun(() -> {
+
+        MapSpawns spawns = this.map.spawns();
+        holderEntity.setInstance(this.map.instance(), spawns.tagger()).thenRun(() -> {
             for (Player tagger : taggers) {
                 holderEntity.addPassenger(tagger);
                 tagger.setGlowing(true);
-                tagger.teleport(SPAWN_POSITION_MAP.get(mapId).tagger.asPos());
+                tagger.teleport(spawns.tagger());
                 tagger.updateViewerRule((entity) -> entity.getEntityId() == holderEntity.getEntityId());
                 tagger.showTitle(
                         Title.title(
@@ -255,7 +242,7 @@ public class ParkourTagGame extends Game {
                 );
             }
 
-            instance.scheduler().submitTask(new Supplier<>() {
+            this.map.instance().scheduler().submitTask(new Supplier<>() {
                 int secondsLeft = MinestomGameServer.TEST_MODE ? 2 : 7;
 
                 @Override
@@ -291,7 +278,7 @@ public class ParkourTagGame extends Game {
             player.showBossBar(this.bossBar);
 
             if (player.getTeam() == null) { // if player is not tagger
-                player.teleport(SPAWN_POSITION_MAP.get(mapId).goon.asPos());
+                player.teleport(spawns.goon());
                 player.setTeam(GOONS_TEAM);
                 player.showTitle(
                         Title.title(
@@ -304,10 +291,10 @@ public class ParkourTagGame extends Game {
             }
         }
 
-        EventNode<InstanceEvent> eventNode = instance.eventNode();
-        ParkourTagAttackListener.registerListener(eventNode, this);
-        ParkourTagTickListener.registerListener(eventNode, this);
-        ParkourTagDoubleJumpListener.registerListener(eventNode, this);
+        Instance instance = this.map.instance();
+        ParkourTagAttackListener.registerListener(instance.eventNode(), this);
+        ParkourTagTickListener.registerListener(instance.eventNode(), this, instance);
+        ParkourTagDoubleJumpListener.registerListener(instance.eventNode(), this);
     }
 
     private void beginTimer() {
@@ -315,7 +302,7 @@ public class ParkourTagGame extends Game {
         int glowing = 15 + ((players.size() * 15) / 8);
         int doubleJump = glowing / 2;
 
-        this.gameTimerTask = this.instance.scheduler().submitTask(new Supplier<>() {
+        this.gameTimerTask = this.map.instance().scheduler().submitTask(new Supplier<>() {
             int secondsLeft = playTime;
 
             @Override
@@ -424,7 +411,7 @@ public class ParkourTagGame extends Game {
             }
         }
 
-        instance.scheduler().buildTask(this::sendBackToLobby)
+        this.map.instance().scheduler().buildTask(this::finish)
                 .delay(TaskSchedule.seconds(6))
                 .schedule();
     }
@@ -445,21 +432,11 @@ public class ParkourTagGame extends Game {
         return victorying;
     }
 
-    private void sendBackToLobby() {
-        for (final Player player : players) {
-            player.setTeam(null);
-        }
-        finish();
-    }
-
     @Override
     public void cleanUp() {
-        for (final Player player : this.players) {
-            player.kick(Component.text("The game ended but we weren't able to connect you to a lobby. Please reconnect", NamedTextColor.RED));
-        }
-        MinecraftServer.getInstanceManager().unregisterInstance(this.instance);
+        this.map.instance().scheduleNextTick(MinecraftServer.getInstanceManager()::unregisterInstance);
+
         MinecraftServer.getBossBarManager().destroyBossBar(this.bossBar);
         if (this.gameTimerTask != null) this.gameTimerTask.cancel();
-        MinecraftServer.getInstanceManager().unregisterInstance(this.instance);
     }
 }
