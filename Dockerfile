@@ -7,7 +7,7 @@ WORKDIR /app
 RUN apt-get install wget \
     libstdc++6 libstdc++ # Add libraries required for pyroscope
 
-COPY build/libs/*-all.jar /app/parkour_tag.jar
-COPY run/maps/*.polar /app/maps/
+COPY build/libs/*-all.jar /app/parkourtag.jar
+COPY run/maps /app/maps
 
-CMD ["java", "--enable-preview", "-jar", "/app/parkour_tag.jar"]
+CMD ["java", "--enable-preview", "-jar", "/app/parkourtag.jar"]
