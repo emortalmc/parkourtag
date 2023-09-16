@@ -1,5 +1,6 @@
 package dev.emortal.minestom.parkourtag.listeners.parkourtag;
 
+import dev.emortal.minestom.parkourtag.GameStage;
 import dev.emortal.minestom.parkourtag.ParkourTagGame;
 import dev.emortal.minestom.parkourtag.utils.FireworkUtils;
 import net.kyori.adventure.sound.Sound;
@@ -10,7 +11,6 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.title.Title;
 import net.minestom.server.color.Color;
-import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.EventNode;
@@ -49,17 +49,17 @@ public class ParkourTagAttackListener {
         Set<Player> taggers = game.getTaggers();
 
         eventNode.addListener(EntityAttackEvent.class, e -> {
-            if (!game.canHitPlayers()) return;
-            if (e.getEntity().getEntityType() != EntityType.PLAYER) return;
-            if (e.getTarget().getEntityType() != EntityType.PLAYER) return;
+            GameStage gameStage = game.getGameStage();
+            if (gameStage != GameStage.LIVE && gameStage != GameStage.VICTORY) return;
 
-            Player attacker = (Player) e.getEntity();
-            Player target = (Player) e.getTarget();
+            if (!(e.getEntity() instanceof Player attacker)) return;
+            if (!(e.getTarget() instanceof Player target)) return;
 
             if (attacker.getGameMode() != GameMode.ADVENTURE) return;
             if (target.getGameMode() != GameMode.ADVENTURE) return;
 
-            if (game.isVictorying() && taggers.contains(target)) { // Attacking tagger after victory
+            // Logic for victory where hiders can hit the seeker
+            if (gameStage == GameStage.VICTORY && taggers.contains(target)) { // Attacking tagger after victory
                 if (!target.hasTag(HIT_COOLDOWN)) target.setTag(HIT_COOLDOWN, System.currentTimeMillis());
                 if (target.getTag(HIT_COOLDOWN) > System.currentTimeMillis()) return;
                 target.setTag(HIT_COOLDOWN, System.currentTimeMillis() + 500);
@@ -74,6 +74,8 @@ public class ParkourTagAttackListener {
             }
 
             if (taggers.contains(target)) return;
+
+            // Logic for the seeker hitting the attackers
 
             attacker.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_PLING, Sound.Source.MASTER, 1f, 1f), Sound.Emitter.self());
             target.showTitle(

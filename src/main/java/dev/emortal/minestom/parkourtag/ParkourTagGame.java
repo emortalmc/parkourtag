@@ -26,8 +26,6 @@ import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.entity.metadata.other.AreaEffectCloudMeta;
-import net.minestom.server.event.EventNode;
-import net.minestom.server.event.trait.InstanceEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.network.packet.server.play.TeamsPacket;
 import net.minestom.server.scoreboard.Team;
@@ -73,8 +71,7 @@ public class ParkourTagGame extends Game {
     private final Set<Player> goons = Sets.newConcurrentHashSet();
     private final BossBar bossBar = BossBar.bossBar(Component.empty(), 0f, BossBar.Color.PINK, BossBar.Overlay.PROGRESS);
 
-    private boolean allowHitPlayers = false;
-    private boolean victorying = false;
+    private GameStage gameStage = GameStage.PRE_GAME;
     private @Nullable Task gameTimerTask;
 
     protected ParkourTagGame(@NotNull GameCreationInfo creationInfo, @NotNull LoadedMap map) {
@@ -248,7 +245,7 @@ public class ParkourTagGame extends Game {
                 @Override
                 public TaskSchedule get() {
                     if (secondsLeft == 0) { // Release tagger
-                        allowHitPlayers = true;
+                        ParkourTagGame.this.gameStage = GameStage.LIVE;
 
                         sendActionBar(Component.text("The tagger has been released!", NamedTextColor.GOLD));
                         playSound(Sound.sound(SoundEvent.BLOCK_ANVIL_LAND, Sound.Source.MASTER, 0.3f, 2f));
@@ -381,7 +378,7 @@ public class ParkourTagGame extends Game {
     }
 
     private void victory(Set<Player> winners) {
-        victorying = true;
+        this.gameStage = GameStage.VICTORY;
 
         if (gameTimerTask != null) gameTimerTask.cancel();
 
@@ -424,12 +421,8 @@ public class ParkourTagGame extends Game {
         return taggers;
     }
 
-    public boolean canHitPlayers() {
-        return allowHitPlayers;
-    }
-
-    public boolean isVictorying() {
-        return victorying;
+    public @NotNull GameStage getGameStage() {
+        return this.gameStage;
     }
 
     @Override

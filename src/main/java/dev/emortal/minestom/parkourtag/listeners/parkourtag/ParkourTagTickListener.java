@@ -1,5 +1,6 @@
 package dev.emortal.minestom.parkourtag.listeners.parkourtag;
 
+import dev.emortal.minestom.parkourtag.GameStage;
 import dev.emortal.minestom.parkourtag.ParkourTagGame;
 import dev.emortal.minestom.parkourtag.map.MapManager;
 import dev.emortal.minestom.parkourtag.utils.NoTickEntity;
@@ -41,21 +42,19 @@ public class ParkourTagTickListener {
         }
 
         eventNode.addListener(EntityTickEvent.class, e -> {
-            if (e.getEntity().getEntityType() != EntityType.PLAYER) return;
-
-            Player player = (Player) e.getEntity();
+            if (!(e.getEntity() instanceof Player player)) return;
 
             if (player.getGameMode() != GameMode.ADVENTURE) return;
 
             Pos playerPos = player.getPosition();
 
             // Note block sound based on distance to tagger
-            if (!game.isVictorying() && game.getTaggers().contains(player)) {
+            if (game.getGameStage() != GameStage.VICTORY && game.getTaggers().contains(player)) {
                 for (Player goon : game.getGoons()) {
                     double distance = goon.getPosition().distanceSquared(playerPos);
-                    if (distance > 25*25) continue;
+                    if (distance > 25 * 25) continue;
 
-                    if ((player.getAliveTicks() % Math.max((int)Math.round(Math.sqrt(distance) / 2), 2)) == 0L) {
+                    if ((player.getAliveTicks() % Math.max((int) Math.round(Math.sqrt(distance) / 2), 2)) == 0L) {
                         goon.playSound(Sound.sound(SoundEvent.BLOCK_NOTE_BLOCK_BASEDRUM, Sound.Source.MASTER, 1.5f, 1f), playerPos);
                     }
                 }
@@ -64,8 +63,8 @@ public class ParkourTagTickListener {
             // Rail launching logic
             if (
                     !player.hasTag(launchCooldownTag)
-                    && player.getInstance().getBlock(playerPos, Block.Getter.Condition.TYPE).compare(Block.RAIL)
-                    && player.getInstance().getBlock(playerPos.add(0, 1, 0), Block.Getter.Condition.TYPE).compare(Block.STRUCTURE_VOID)
+                            && player.getInstance().getBlock(playerPos, Block.Getter.Condition.TYPE).compare(Block.RAIL)
+                            && player.getInstance().getBlock(playerPos.add(0, 1, 0), Block.Getter.Condition.TYPE).compare(Block.STRUCTURE_VOID)
             ) {
                 player.playSound(Sound.sound(SoundEvent.ENTITY_BAT_TAKEOFF, Sound.Source.MASTER, 0.5f, 0.8f), Sound.Emitter.self());
                 player.setVelocity(new Vec(0, 22.5, 0));
@@ -103,7 +102,7 @@ public class ParkourTagTickListener {
         meta.setBackgroundColor(0);
         meta.setScale(new Vec(7.5));
         Quaternion quaternion = new Quaternion(new Vec(1, 0, 0), Math.toRadians(90));
-        meta.setLeftRotation(new float[] {(float) quaternion.getW(), (float) quaternion.getX(), (float) quaternion.getY(), (float) quaternion.getZ()});
+        meta.setLeftRotation(new float[]{(float) quaternion.getW(), (float) quaternion.getX(), (float) quaternion.getY(), (float) quaternion.getZ()});
         entity.setTag(onTag, false);
 
         instance.scheduler().buildTask(() -> {
