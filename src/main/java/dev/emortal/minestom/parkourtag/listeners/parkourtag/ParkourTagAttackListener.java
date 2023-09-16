@@ -24,7 +24,6 @@ import net.minestom.server.tag.Tag;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class ParkourTagAttackListener {
@@ -46,7 +45,6 @@ public class ParkourTagAttackListener {
     private static final Tag<Long> HIT_COOLDOWN = Tag.Long("hitCooldown");
 
     public static void registerListener(EventNode<InstanceEvent> eventNode, ParkourTagGame game) {
-        Set<Player> taggers = game.getTaggers();
 
         eventNode.addListener(EntityAttackEvent.class, e -> {
             GameStage gameStage = game.getGameStage();
@@ -58,8 +56,8 @@ public class ParkourTagAttackListener {
             if (attacker.getGameMode() != GameMode.ADVENTURE) return;
             if (target.getGameMode() != GameMode.ADVENTURE) return;
 
-            // Logic for victory where hiders can hit the seeker
-            if (gameStage == GameStage.VICTORY && taggers.contains(target)) { // Attacking tagger after victory
+            // Logic for victory where goons can hit the seeker
+            if (gameStage == GameStage.VICTORY && target.getTeam() == ParkourTagGame.TAGGER_TEAM) { // Attacking tagger after victory
                 if (!target.hasTag(HIT_COOLDOWN)) target.setTag(HIT_COOLDOWN, System.currentTimeMillis());
                 if (target.getTag(HIT_COOLDOWN) > System.currentTimeMillis()) return;
                 target.setTag(HIT_COOLDOWN, System.currentTimeMillis() + 500);
@@ -73,7 +71,9 @@ public class ParkourTagAttackListener {
                 return;
             }
 
-            if (taggers.contains(target)) return;
+            if (target.getTeam() == ParkourTagGame.TAGGER_TEAM || attacker.getTeam() != ParkourTagGame.TAGGER_TEAM ||
+                    gameStage == GameStage.VICTORY)
+                return;
 
             // Logic for the seeker hitting the attackers
 
