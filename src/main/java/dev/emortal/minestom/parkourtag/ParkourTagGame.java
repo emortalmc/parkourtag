@@ -142,12 +142,12 @@ public class ParkourTagGame extends Game {
 
         this.map.instance().scheduler().submitTask(new Supplier<>() {
             int nameIter = MinestomGameServer.TEST_MODE ? 3 : 15;
-            final int offset = random.nextInt(players.size());
+            final int offset = random.nextInt(ParkourTagGame.this.getPlayers().size());
 
             @Override
             public TaskSchedule get() {
-                Iterator<Player> iterator = players.iterator();
-                int playerIndex = (nameIter + offset) % players.size();
+                Iterator<Player> iterator = getPlayers().iterator();
+                int playerIndex = (nameIter + offset) % getPlayers().size();
                 for (int playerIter = 0; playerIter < playerIndex; playerIter++) {
                     iterator.next();
                 }
@@ -209,7 +209,7 @@ public class ParkourTagGame extends Game {
 
         Set<Player> taggers = getTaggers();
 
-        int goonsLeft = this.players.size() - 1;
+        int goonsLeft = this.getPlayers().size() - 1;
         this.bossBar.name(
                 Component.text()
                         .append(Component.text(goonsLeft, TextColor.fromHexString("#cdffc4"), TextDecoration.BOLD)) // assumes only one tagger
@@ -271,7 +271,7 @@ public class ParkourTagGame extends Game {
             });
         });
 
-        for (Player player : this.players) {
+        for (Player player : this.getPlayers()) {
             player.showBossBar(this.bossBar);
 
             if (player.getTeam() == null) { // if player is not tagger
@@ -295,8 +295,8 @@ public class ParkourTagGame extends Game {
     }
 
     private void beginTimer() {
-        int playTime = 300 / (12 - players.size());
-        int glowing = 15 + ((players.size() * 15) / 8);
+        int playTime = 300 / (12 - getPlayers().size());
+        int glowing = 15 + ((getPlayers().size() * 15) / 8);
         int doubleJump = glowing / 2;
 
         this.gameTimerTask = this.map.instance().scheduler().submitTask(new Supplier<>() {
@@ -396,7 +396,7 @@ public class ParkourTagGame extends Game {
         Sound defeatSound = Sound.sound(SoundEvent.ENTITY_VILLAGER_NO, Sound.Source.MASTER, 1f, 1f);
         Sound victorySound = Sound.sound(SoundEvent.BLOCK_BEACON_POWER_SELECT, Sound.Source.MASTER, 1f, 0.8f);
 
-        for (Player player : players) {
+        for (Player player : getPlayers()) {
             player.hideBossBar(bossBar);
 
             if (winners.contains(player)) {

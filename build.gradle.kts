@@ -17,9 +17,9 @@ repositories {
 }
 
 dependencies {
-    implementation("dev.emortal.minestom:game-sdk:bf1bede")
-    implementation("dev.hollowcube:polar:1.3.1")
+    implementation("dev.emortal.minestom:game-sdk:abecd78")
 
+    implementation("dev.hollowcube:polar:1.3.1")
     implementation("net.kyori:adventure-text-minimessage:4.14.0")
 }
 
