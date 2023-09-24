@@ -36,10 +36,10 @@ spec:
               resources:
                 requests:
                   cpu: 0m
-                  memory: 512Mi
+                  memory: 768Mi
                 limits:
-                  cpu: "1"
-                  memory: 512Mi
+                  cpu: 1500m
+                  memory: 768Mi
 
               env:
                 - name: VELOCITY_FORWARDING_SECRET
