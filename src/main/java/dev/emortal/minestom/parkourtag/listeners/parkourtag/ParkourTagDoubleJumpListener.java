@@ -23,7 +23,7 @@ public class ParkourTagDoubleJumpListener {
 
             e.getPlayer().setAllowFlying(false);
             e.getPlayer().setFlying(false);
-            e.getPlayer().setVelocity(playerPos.direction().mul(20.0).withY(y -> Math.max(y, 8.0)));
+            e.getPlayer().setVelocity(playerPos.direction().mul(23.0).withY(y -> Math.max(y, 10.0)));
 
             game.playSound(Sound.sound(SoundEvent.ENTITY_GENERIC_EXPLODE, Sound.Source.MASTER, 1f, 1.5f), playerPos.x(), playerPos.y(), playerPos.z());
 
