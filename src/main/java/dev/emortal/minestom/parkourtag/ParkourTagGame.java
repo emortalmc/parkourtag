@@ -8,7 +8,6 @@ import dev.emortal.minestom.parkourtag.listeners.parkourtag.ParkourTagAttackList
 import dev.emortal.minestom.parkourtag.listeners.parkourtag.ParkourTagDoubleJumpListener;
 import dev.emortal.minestom.parkourtag.listeners.parkourtag.ParkourTagTickListener;
 import dev.emortal.minestom.parkourtag.map.LoadedMap;
-import dev.emortal.minestom.parkourtag.map.MapManager;
 import dev.emortal.minestom.parkourtag.map.MapSpawns;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.key.Key;
@@ -77,6 +76,8 @@ public class ParkourTagGame extends Game {
     protected ParkourTagGame(@NotNull GameCreationInfo creationInfo, @NotNull LoadedMap map) {
         super(creationInfo);
         this.map = map;
+
+        ParkourTagTickListener.registerListener(getEventNode(), this, getSpawningInstance());
     }
 
     @Override
@@ -218,8 +219,6 @@ public class ParkourTagGame extends Game {
         );
         this.bossBar.color(BossBar.Color.GREEN);
 
-        String mapId = this.map.instance().getTag(MapManager.MAP_ID_TAG);
-
         var holderEntity = new Entity(EntityType.AREA_EFFECT_CLOUD);
         ((AreaEffectCloudMeta) holderEntity.getEntityMeta()).setRadius(0f);
 
@@ -288,10 +287,8 @@ public class ParkourTagGame extends Game {
             }
         }
 
-        Instance instance = this.map.instance();
-        ParkourTagAttackListener.registerListener(instance.eventNode(), this);
-        ParkourTagTickListener.registerListener(instance.eventNode(), this, instance);
-        ParkourTagDoubleJumpListener.registerListener(instance.eventNode(), this);
+        ParkourTagAttackListener.registerListener(getEventNode(), this);
+        ParkourTagDoubleJumpListener.registerListener(getEventNode(), this);
     }
 
     private void beginTimer() {

@@ -7,9 +7,9 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.minestom.server.coordinate.Pos;
+import net.minestom.server.event.Event;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.player.PlayerStartFlyingEvent;
-import net.minestom.server.event.trait.InstanceEvent;
 import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.timer.TaskSchedule;
 
@@ -17,7 +17,7 @@ import java.util.function.Supplier;
 
 public class ParkourTagDoubleJumpListener {
 
-    public static void registerListener(EventNode<InstanceEvent> eventNode, ParkourTagGame game) {
+    public static void registerListener(EventNode<Event> eventNode, ParkourTagGame game) {
         eventNode.addListener(PlayerStartFlyingEvent.class, e -> {
             Pos playerPos = e.getPlayer().getPosition();
 

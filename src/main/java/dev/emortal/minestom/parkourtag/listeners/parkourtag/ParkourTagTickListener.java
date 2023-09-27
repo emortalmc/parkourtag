@@ -15,9 +15,9 @@ import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.entity.metadata.display.TextDisplayMeta;
+import net.minestom.server.event.Event;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.entity.EntityTickEvent;
-import net.minestom.server.event.trait.InstanceEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.network.packet.server.play.ParticlePacket;
@@ -31,7 +31,7 @@ public class ParkourTagTickListener {
 
     private static final Tag<Boolean> launchCooldownTag = Tag.Boolean("launchCooldown");
 
-    public static void registerListener(EventNode<InstanceEvent> eventNode, ParkourTagGame game, Instance instance) {
+    public static void registerListener(EventNode<Event> eventNode, ParkourTagGame game, Instance instance) {
         if (instance.getTag(MapManager.MAP_ID_TAG).equals("city")) {
             createRailParticle(3, 60, -16, game, instance);
             createRailParticle(5, 61, -18, game, instance);

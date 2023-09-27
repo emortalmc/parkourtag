@@ -13,9 +13,9 @@ import net.kyori.adventure.title.Title;
 import net.minestom.server.color.Color;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
+import net.minestom.server.event.Event;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.entity.EntityAttackEvent;
-import net.minestom.server.event.trait.InstanceEvent;
 import net.minestom.server.item.firework.FireworkEffect;
 import net.minestom.server.item.firework.FireworkEffectType;
 import net.minestom.server.network.packet.server.play.HitAnimationPacket;
@@ -44,7 +44,7 @@ public class ParkourTagAttackListener {
 
     private static final Tag<Long> HIT_COOLDOWN = Tag.Long("hitCooldown");
 
-    public static void registerListener(EventNode<InstanceEvent> eventNode, ParkourTagGame game) {
+    public static void registerListener(EventNode<Event> eventNode, ParkourTagGame game) {
 
         eventNode.addListener(EntityAttackEvent.class, e -> {
             GameStage gameStage = game.getGameStage();
