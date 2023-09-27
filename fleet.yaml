@@ -31,7 +31,7 @@ spec:
         spec:
           containers:
             - name: parkourtag
-              image: ghcr.io/emortalmc/parkourtag:c4347e68a30e1f3063f873457db39a0306d40eab
+              image: ghcr.io/emortalmc/parkourtag:a9eb17c4e94486bcb999fd20088758a7923adb19
 
               resources:
                 requests:
