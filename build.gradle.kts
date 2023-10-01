@@ -25,18 +25,11 @@ dependencies {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(20))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 
 tasks {
-    compileJava {
-        options.compilerArgs.addAll(listOf(
-            "--enable-preview",
-            "--release", "20"
-        ))
-    }
-
     shadowJar {
         mergeServiceFiles()
 

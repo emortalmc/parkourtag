@@ -1,13 +1,13 @@
-FROM --platform=$BUILDPLATFORM eclipse-temurin:20-jre
+FROM --platform=$TARGETPLATFORM azul/zulu-openjdk:21-jre
 
 RUN mkdir /app
 WORKDIR /app
 
-# Add libraries required for pyroscope
-RUN apt-get install wget \
-    libstdc++6 libstdc++ # Add libraries required for pyroscope
+# Download packages
+RUN apt-get update && apt-get install -y wget
 
 COPY build/libs/*-all.jar /app/parkourtag.jar
 COPY run/maps /app/maps
 
-CMD ["java", "--enable-preview", "-jar", "/app/parkourtag.jar"]
+ENTRYPOINT ["java"]
+CMD ["-jar", "/app/parkourtag.jar"]
