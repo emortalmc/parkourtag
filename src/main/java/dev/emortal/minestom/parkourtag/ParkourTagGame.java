@@ -4,6 +4,7 @@ import com.google.common.collect.Sets;
 import dev.emortal.minestom.gamesdk.MinestomGameServer;
 import dev.emortal.minestom.gamesdk.config.GameCreationInfo;
 import dev.emortal.minestom.gamesdk.game.Game;
+import dev.emortal.minestom.gamesdk.util.GameWinLoseMessages;
 import dev.emortal.minestom.parkourtag.listeners.parkourtag.ParkourTagAttackListener;
 import dev.emortal.minestom.parkourtag.listeners.parkourtag.ParkourTagDoubleJumpListener;
 import dev.emortal.minestom.parkourtag.listeners.parkourtag.ParkourTagTickListener;
@@ -381,12 +382,12 @@ public class ParkourTagGame extends Game {
 
         Title victoryTitle = Title.title(
                 MINI_MESSAGE.deserialize("<gradient:#ffc570:gold><bold>VICTORY!"),
-                Component.empty(),
+                Component.text(GameWinLoseMessages.randomVictory(), NamedTextColor.GRAY),
                 Title.Times.times(Duration.ZERO, Duration.ofSeconds(3), Duration.ofSeconds(3))
         );
         Title defeatTitle = Title.title(
                 MINI_MESSAGE.deserialize("<gradient:#ff474e:#ff0d0d><bold>DEFEAT!"),
-                Component.empty(),
+                Component.text(GameWinLoseMessages.randomDefeat(), NamedTextColor.GRAY),
                 Title.Times.times(Duration.ZERO, Duration.ofSeconds(3), Duration.ofSeconds(3))
         );
 
