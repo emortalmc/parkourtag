@@ -78,7 +78,7 @@ public class ParkourTagGame extends Game {
         super(creationInfo);
         this.map = map;
 
-        ParkourTagTickListener.registerListener(getEventNode(), this, getSpawningInstance());
+        ParkourTagTickListener.registerListener(this.getEventNode(), this, this.getInstance());
     }
 
     @Override
@@ -106,7 +106,11 @@ public class ParkourTagGame extends Game {
     }
 
     @Override
-    public @NotNull Instance getSpawningInstance() {
+    public @NotNull Instance getSpawningInstance(@NotNull Player player) {
+        return this.map.instance();
+    }
+
+    public @NotNull Instance getInstance() {
         return this.map.instance();
     }
 
