@@ -22,7 +22,6 @@ import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.network.packet.server.play.ParticlePacket;
 import net.minestom.server.particle.Particle;
-import net.minestom.server.particle.ParticleCreator;
 import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.tag.Tag;
 import net.minestom.server.timer.TaskSchedule;
@@ -83,7 +82,7 @@ public class ParkourTagTickListener {
         instance.scheduler().buildTask(() -> {
             double tick = instance.getWorldAge();
 
-            ParticlePacket packet = ParticleCreator.createParticlePacket(Particle.SNOWFLAKE, true, x + Math.sin(tick * spinSpeed) * spinScale, y, z + Math.cos(tick * spinSpeed) * spinScale, 0f, 0.5f, 0f, 1f, 0, null);
+            ParticlePacket packet = new ParticlePacket(Particle.SNOWFLAKE, true, x + Math.sin(tick * spinSpeed) * spinScale, y, z + Math.cos(tick * spinSpeed) * spinScale, 0f, 0.5f, 0f, 1, 0);
 
             game.sendGroupedPacket(packet);
         }).repeat(TaskSchedule.tick(1)).schedule();
