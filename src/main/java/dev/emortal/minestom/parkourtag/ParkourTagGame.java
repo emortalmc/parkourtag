@@ -297,7 +297,7 @@ public class ParkourTagGame extends Game {
     }
 
     private void beginTimer() {
-        int playTime = 300 / Math.max(12 - getPlayers().size(), 12);
+        int playTime = 300 / Math.max(12 - getPlayers().size(), 1);
         int glowing = 15 + ((getPlayers().size() * 15) / 8);
         int doubleJump = glowing / 2;
 
