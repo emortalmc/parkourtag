@@ -231,7 +231,7 @@ public class ParkourTagGame extends Game {
         ((AreaEffectCloudMeta) holderEntity.getEntityMeta()).setRadius(0f);
 
         MapSpawns spawns = this.map.spawns();
-        holderEntity.setInstance(this.map.instance(), spawns.tagger()).thenRun(() -> {
+        holderEntity.setInstance(this.map.instance(), spawns.tagger().add(0, 0.1, 0)).thenRun(() -> {
             for (Player tagger : taggers) {
                 holderEntity.addPassenger(tagger);
                 tagger.setGlowing(true);
