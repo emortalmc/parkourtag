@@ -228,6 +228,7 @@ public class ParkourTagGame extends Game {
         this.bossBar.color(BossBar.Color.GREEN);
 
         var holderEntity = new Entity(EntityType.AREA_EFFECT_CLOUD);
+        holderEntity.setNoGravity(true);
         ((AreaEffectCloudMeta) holderEntity.getEntityMeta()).setRadius(0f);
 
         MapSpawns spawns = this.map.spawns();
