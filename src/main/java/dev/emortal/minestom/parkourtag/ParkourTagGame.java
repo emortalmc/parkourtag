@@ -49,17 +49,20 @@ public class ParkourTagGame extends Game {
     public static final Team TAGGER_TEAM = MinecraftServer.getTeamManager().createBuilder("taggers")
             .teamColor(NamedTextColor.RED)
             .nameTagVisibility(TeamsPacket.NameTagVisibility.ALWAYS)
+            .collisionRule(TeamsPacket.CollisionRule.NEVER)
             .updateTeamPacket()
             .build();
     public static final Team GOONS_TEAM = MinecraftServer.getTeamManager().createBuilder("goons")
             .teamColor(NamedTextColor.GREEN)
             .nameTagVisibility(TeamsPacket.NameTagVisibility.HIDE_FOR_OTHER_TEAMS)
+            .collisionRule(TeamsPacket.CollisionRule.NEVER)
             .updateTeamPacket()
             .build();
     public static final Team DEAD_TEAM = MinecraftServer.getTeamManager().createBuilder("dead")
             .teamColor(NamedTextColor.GRAY)
             .prefix(Component.text("☠ ", NamedTextColor.GRAY))
             .nameTagVisibility(TeamsPacket.NameTagVisibility.NEVER)
+            .collisionRule(TeamsPacket.CollisionRule.NEVER)
             .updateTeamPacket()
             .build();
 
