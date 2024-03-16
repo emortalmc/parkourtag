@@ -10,6 +10,8 @@ import dev.emortal.minestom.parkourtag.listeners.parkourtag.ParkourTagDoubleJump
 import dev.emortal.minestom.parkourtag.listeners.parkourtag.ParkourTagTickListener;
 import dev.emortal.minestom.parkourtag.map.LoadedMap;
 import dev.emortal.minestom.parkourtag.map.MapSpawns;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.Metrics;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
@@ -20,6 +22,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.title.Title;
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.ServerFlag;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
@@ -144,6 +147,22 @@ public class ParkourTagGame extends Game {
                 return TaskSchedule.seconds(1);
             }
         });
+
+        String gameId = this.getCreationInfo().id();
+
+        this.meters.addAll(Set.of(
+                Gauge.builder("parkourtag.taggers_count", this, game -> game.getTaggers().size())
+                        .tag("gameId", gameId)
+                        .description("The amount of taggers currently in the game")
+                        .register(Metrics.globalRegistry),
+
+                Gauge.builder("parkourtag.goons_count", this, game -> game.getGoons().size())
+                        .tag("gameId", gameId)
+                        .description("The amount of goons currently in the game")
+                        .register(Metrics.globalRegistry)
+
+//                Gauge.builder("parkourtag.time_remaining", this, game -> game.get) todo
+        ));
     }
 
     private void pickTagger() {
@@ -274,7 +293,7 @@ public class ParkourTagGame extends Game {
                     }
 
                     secondsLeft--;
-                    return TaskSchedule.tick(MinecraftServer.TICK_PER_SECOND);
+                    return TaskSchedule.tick(ServerFlag.SERVER_TICKS_PER_SECOND);
                 }
             });
         });
@@ -360,7 +379,7 @@ public class ParkourTagGame extends Game {
                 bossBar.progress((float) secondsLeft / (float) playTime);
 
                 secondsLeft--;
-                return TaskSchedule.tick(MinecraftServer.TICK_PER_SECOND);
+                return TaskSchedule.tick(ServerFlag.SERVER_TICKS_PER_SECOND);
             }
         });
     }
