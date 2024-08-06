@@ -9,7 +9,7 @@ import dev.emortal.minestom.parkourtag.listeners.parkourtag.ParkourTagAttackList
 import dev.emortal.minestom.parkourtag.listeners.parkourtag.ParkourTagDoubleJumpListener;
 import dev.emortal.minestom.parkourtag.listeners.parkourtag.ParkourTagTickListener;
 import dev.emortal.minestom.parkourtag.map.LoadedMap;
-import dev.emortal.minestom.parkourtag.map.MapSpawns;
+import dev.emortal.minestom.parkourtag.map.MapData;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Metrics;
 import net.kyori.adventure.bossbar.BossBar;
@@ -250,7 +250,7 @@ public class ParkourTagGame extends Game {
         holderEntity.setNoGravity(true);
         ((AreaEffectCloudMeta) holderEntity.getEntityMeta()).setRadius(0f);
 
-        MapSpawns spawns = this.map.spawns();
+        MapData spawns = this.map.mapData();
         holderEntity.setInstance(this.map.instance(), spawns.tagger().add(0, 0.1, 0)).thenRun(() -> {
             for (Player tagger : taggers) {
                 holderEntity.addPassenger(tagger);
@@ -448,6 +448,10 @@ public class ParkourTagGame extends Game {
 
     public @NotNull GameStage getGameStage() {
         return this.gameStage;
+    }
+
+    public @NotNull LoadedMap getMap() {
+        return map;
     }
 
     @Override

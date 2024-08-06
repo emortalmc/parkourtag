@@ -2,12 +2,14 @@ package dev.emortal.minestom.parkourtag.map;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
+import dev.emortal.minestom.parkourtag.utils.NoopChunkLoader;
 import net.hollowcube.polar.PolarLoader;
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.instance.Chunk;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
+import net.minestom.server.registry.DynamicRegistry;
 import net.minestom.server.tag.Tag;
-import net.minestom.server.utils.NamespaceID;
 import net.minestom.server.world.DimensionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -18,17 +20,19 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class MapManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(MapManager.class);
     private static final Gson GSON = new Gson();
 
-    private static final DimensionType DIMENSION_TYPE = DimensionType.builder(NamespaceID.from("emortalmc:parkourtag"))
-            .skylightEnabled(true)
+    private static final DimensionType DIMENSION_TYPE = DimensionType.builder()
+            .hasSkylight(true)
 //            .ambientLight(1.0f)
             .build();
 
@@ -44,30 +48,35 @@ public final class MapManager {
     private final Map<String, PreLoadedMap> preLoadedMaps;
 
     public MapManager() {
-        MinecraftServer.getDimensionTypeManager().addDimension(DIMENSION_TYPE);
+        DynamicRegistry.Key<DimensionType> dimension = MinecraftServer.getDimensionTypeRegistry().register("emortalmc:parkourtag", DIMENSION_TYPE);
 
         Map<String, PreLoadedMap> maps = new HashMap<>();
         for (String mapName : ENABLED_MAPS) {
             Path mapPath = MAPS_PATH.resolve(mapName);
             Path polarPath = mapPath.resolve("map.polar");
-            Path spawnsPath = mapPath.resolve("spawns.json");
+            Path spawnsPath = mapPath.resolve("map_data.json");
 
             try {
-                MapSpawns spawns = GSON.fromJson(new JsonReader(Files.newBufferedReader(spawnsPath)), MapSpawns.class);
-                LOGGER.info("Loaded spawns for map {}: [{}]", mapName, spawns);
+                MapData spawns = GSON.fromJson(new JsonReader(Files.newBufferedReader(spawnsPath)), MapData.class);
+                LOGGER.info("Loaded mapData for map {}: [{}]", mapName, spawns);
 
                 PolarLoader polarLoader = new PolarLoader(polarPath);
 
-                InstanceContainer instance = MinecraftServer.getInstanceManager().createInstanceContainer(DIMENSION_TYPE, polarLoader);
+                InstanceContainer instance = MinecraftServer.getInstanceManager().createInstanceContainer(dimension, polarLoader);
                 instance.setTimeRate(0);
-                instance.setTimeUpdate(null);
+                instance.setTimeSynchronizationTicks(0);
 
                 // Do some preloading!
+                List<CompletableFuture<Chunk>> futures = new ArrayList<>();
                 for (int x = -CHUNK_LOADING_RADIUS; x < CHUNK_LOADING_RADIUS; x++) {
                     for (int z = -CHUNK_LOADING_RADIUS; z < CHUNK_LOADING_RADIUS; z++) {
-                        instance.loadChunk(x, z);
+                        futures.add(instance.loadChunk(x, z));
                     }
                 }
+                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).thenRun(() -> {
+                    // Replace polar loader after all chunks are loaded to save memory
+                    instance.setChunkLoader(new NoopChunkLoader());
+                });
 
                 maps.put(mapName, new PreLoadedMap(instance, spawns));
             } catch (IOException exception) {
@@ -99,16 +108,16 @@ public final class MapManager {
         return map.load(randomMapId);
     }
 
-    private record PreLoadedMap(@NotNull InstanceContainer rootInstance, @NotNull MapSpawns spawns) {
+    private record PreLoadedMap(@NotNull InstanceContainer rootInstance, @NotNull MapData mapData) {
 
         @NotNull LoadedMap load(@NotNull String mapId) {
             Instance shared = MinecraftServer.getInstanceManager().createSharedInstance(this.rootInstance());
 
             shared.setTag(MAP_ID_TAG, mapId);
             shared.setTimeRate(0);
-            shared.setTimeUpdate(null);
+            shared.setTimeSynchronizationTicks(0);
 
-            return new LoadedMap(shared, this.spawns());
+            return new LoadedMap(shared, this.mapData());
         }
     }
 }

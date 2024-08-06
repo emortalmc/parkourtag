@@ -6,11 +6,11 @@ import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.Player;
 import net.minestom.server.entity.metadata.projectile.FireworkRocketMeta;
 import net.minestom.server.instance.Instance;
-import net.minestom.server.item.ItemMeta;
+import net.minestom.server.item.ItemComponent;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
-import net.minestom.server.item.firework.FireworkEffect;
-import net.minestom.server.item.metadata.FireworkMeta;
+import net.minestom.server.item.component.FireworkExplosion;
+import net.minestom.server.item.component.FireworkList;
 import net.minestom.server.network.packet.server.play.EntityStatusPacket;
 import net.minestom.server.utils.PacketUtils;
 
@@ -19,9 +19,8 @@ import java.util.Set;
 
 public class FireworkUtils {
 
-    public static void showFirework(Set<Player> players, Instance instance, Pos position, List<FireworkEffect> effects) {
-        ItemMeta fwMeta = new FireworkMeta.Builder().effects(effects).build();
-        ItemStack fwItem = ItemStack.builder(Material.FIREWORK_ROCKET).meta(fwMeta).build();
+    public static void showFirework(Set<Player> players, Instance instance, Pos position, List<FireworkExplosion> effects) {
+        ItemStack fwItem = ItemStack.builder(Material.FIREWORK_ROCKET).set(ItemComponent.FIREWORKS, new FireworkList((byte) 0, effects)).build();
 
         Entity firework = new Entity(EntityType.FIREWORK_ROCKET);
         ((FireworkRocketMeta) firework.getEntityMeta()).setFireworkInfo(fwItem);

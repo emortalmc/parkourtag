@@ -16,8 +16,7 @@ import net.minestom.server.entity.Player;
 import net.minestom.server.event.Event;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.entity.EntityAttackEvent;
-import net.minestom.server.item.firework.FireworkEffect;
-import net.minestom.server.item.firework.FireworkEffectType;
+import net.minestom.server.item.component.FireworkExplosion;
 import net.minestom.server.network.packet.server.play.HitAnimationPacket;
 import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.tag.Tag;
@@ -106,12 +105,12 @@ public class ParkourTagAttackListener {
             target.setVelocity(attacker.getPosition().direction().mul(15.0));
 
             // Firework death effect
-            FireworkEffect randomColorEffect = new FireworkEffect(
-                    false,
-                    false,
-                    FireworkEffectType.LARGE_BALL,
+            FireworkExplosion randomColorEffect = new FireworkExplosion(
+                    FireworkExplosion.Shape.LARGE_BALL,
                     List.of(new Color(java.awt.Color.HSBtoRGB(random.nextFloat(), 1f, 1f))),
-                    List.of()
+                    List.of(),
+                    false,
+                    false
             );
             FireworkUtils.showFirework(game.getPlayers(), e.getInstance(), target.getPosition().add(0, 1.5, 0), List.of(randomColorEffect));
 
