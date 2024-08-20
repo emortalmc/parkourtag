@@ -20,7 +20,6 @@ public final class Main {
 
             return GameSdkConfig.builder()
                     .minPlayers(ParkourTagGame.MIN_PLAYERS)
-                    .maxGames(10)
                     .gameCreator(info -> new ParkourTagGame(info, mapManager.getMap(info.mapId())))
                     .build();
         });
