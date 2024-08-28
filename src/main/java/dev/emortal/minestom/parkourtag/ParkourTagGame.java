@@ -5,11 +5,12 @@ import dev.emortal.minestom.gamesdk.MinestomGameServer;
 import dev.emortal.minestom.gamesdk.config.GameCreationInfo;
 import dev.emortal.minestom.gamesdk.game.Game;
 import dev.emortal.minestom.gamesdk.util.GameWinLoseMessages;
-import dev.emortal.minestom.parkourtag.listeners.parkourtag.ParkourTagAttackListener;
-import dev.emortal.minestom.parkourtag.listeners.parkourtag.ParkourTagDoubleJumpListener;
-import dev.emortal.minestom.parkourtag.listeners.parkourtag.ParkourTagTickListener;
+import dev.emortal.minestom.parkourtag.listeners.ParkourTagAttackListener;
+import dev.emortal.minestom.parkourtag.listeners.ParkourTagDoubleJumpListener;
+import dev.emortal.minestom.parkourtag.listeners.ParkourTagTickListener;
 import dev.emortal.minestom.parkourtag.map.LoadedMap;
 import dev.emortal.minestom.parkourtag.map.MapData;
+import dev.emortal.minestom.parkourtag.physics.MinecraftPhysicsHandler;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Metrics;
 import net.kyori.adventure.bossbar.BossBar;
@@ -454,9 +455,15 @@ public class ParkourTagGame extends Game {
         return map;
     }
 
+    public MinecraftPhysicsHandler getPhysicsHandler() {
+        return getMap().physicsHandler();
+    }
+
     @Override
     public void cleanUp() {
         this.map.instance().scheduleNextTick(MinecraftServer.getInstanceManager()::unregisterInstance);
+
+        this.getPhysicsHandler().cleanup();
 
         MinecraftServer.getBossBarManager().destroyBossBar(this.bossBar);
         if (this.gameTimerTask != null) this.gameTimerTask.cancel();

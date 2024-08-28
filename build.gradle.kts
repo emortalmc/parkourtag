@@ -21,6 +21,8 @@ dependencies {
 
     implementation("dev.hollowcube:polar:1.11.1")
     implementation("net.kyori:adventure-text-minimessage:4.16.0")
+
+    implementation("com.github.stephengold:Libbulletjme:21.2.1")
 }
 
 java {

@@ -2,10 +2,13 @@ package dev.emortal.minestom.parkourtag.map;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
-import dev.emortal.minestom.parkourtag.utils.NoopChunkLoader;
+import com.jme3.bullet.collision.PhysicsCollisionObject;
+import dev.emortal.minestom.parkourtag.physics.MinecraftPhysicsHandler;
+import dev.emortal.minestom.parkourtag.physics.worldmesh.ChunkMesher;
 import net.hollowcube.polar.PolarLoader;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.instance.Chunk;
+import net.minestom.server.instance.IChunkLoader;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.registry.DynamicRegistry;
@@ -67,18 +70,25 @@ public final class MapManager {
                 instance.setTimeSynchronizationTicks(0);
 
                 // Do some preloading!
+                List<PhysicsCollisionObject> chunkMeshes = new ArrayList<>();
                 List<CompletableFuture<Chunk>> futures = new ArrayList<>();
                 for (int x = -CHUNK_LOADING_RADIUS; x < CHUNK_LOADING_RADIUS; x++) {
                     for (int z = -CHUNK_LOADING_RADIUS; z < CHUNK_LOADING_RADIUS; z++) {
-                        futures.add(instance.loadChunk(x, z));
+                        CompletableFuture<Chunk> future = instance.loadChunk(x, z);
+                        futures.add(future);
+                        future.thenAccept((chunk) -> {
+                            PhysicsCollisionObject obj = ChunkMesher.createChunk(chunk);
+                            if (obj != null) chunkMeshes.add(obj);
+                        });
                     }
                 }
+
                 CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).thenRun(() -> {
                     // Replace polar loader after all chunks are loaded to save memory
-                    instance.setChunkLoader(new NoopChunkLoader());
+                    instance.setChunkLoader(IChunkLoader.noop());
                 });
 
-                maps.put(mapName, new PreLoadedMap(instance, spawns));
+                maps.put(mapName, new PreLoadedMap(instance, spawns, chunkMeshes));
             } catch (IOException exception) {
                 throw new UncheckedIOException(exception);
             }
@@ -108,16 +118,18 @@ public final class MapManager {
         return map.load(randomMapId);
     }
 
-    private record PreLoadedMap(@NotNull InstanceContainer rootInstance, @NotNull MapData mapData) {
+    private record PreLoadedMap(@NotNull InstanceContainer rootInstance, @NotNull MapData mapData, @NotNull List<PhysicsCollisionObject> chunkMeshes) {
 
         @NotNull LoadedMap load(@NotNull String mapId) {
             Instance shared = MinecraftServer.getInstanceManager().createSharedInstance(this.rootInstance());
+
+            MinecraftPhysicsHandler physicsHandler = new MinecraftPhysicsHandler(shared, chunkMeshes);
 
             shared.setTag(MAP_ID_TAG, mapId);
             shared.setTimeRate(0);
             shared.setTimeSynchronizationTicks(0);
 
-            return new LoadedMap(shared, this.mapData());
+            return new LoadedMap(shared, this.mapData(), physicsHandler);
         }
     }
 }

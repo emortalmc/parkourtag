@@ -1,14 +1,19 @@
 package dev.emortal.minestom.parkourtag;
 
+import com.jme3.system.NativeLibraryLoader;
 import dev.emortal.minestom.gamesdk.MinestomGameServer;
 import dev.emortal.minestom.gamesdk.config.GameSdkConfig;
 import dev.emortal.minestom.parkourtag.commands.CreditsCommand;
 import dev.emortal.minestom.parkourtag.map.MapManager;
 import net.minestom.server.MinecraftServer;
 
+import java.io.File;
+
 public final class Main {
 
     public static void main(String[] args) {
+        NativeLibraryLoader.loadLibbulletjme(true, new File("natives/"), "Release", "Sp");
+
         MinestomGameServer server = MinestomGameServer.create(() -> {
             MapManager mapManager = new MapManager();
 
