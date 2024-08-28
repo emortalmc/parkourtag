@@ -321,9 +321,14 @@ public class ParkourTagGame extends Game {
     }
 
     private void beginTimer() {
-        int playTime = 210 / Math.max(12 - getPlayers().size(), 1);
-        int glowing = 15 + ((getPlayers().size() * 15) / 8);
-        int doubleJump = glowing / 2;
+        int playerCount = getPlayers().size();
+        int glowing = 15 + ((playerCount * 15) / 8); // 30 seconds with 8 players, 18 with 2
+        int doubleJump = glowing / 2; // 15 seconds with 8 players, 9 with 2
+        int playTime = 240 / Math.max((12 - playerCount), 1); // 60 seconds with 8 players, 24 with 2
+
+//        int playTime = 210 / Math.max(12 - getPlayers().size(), 1);
+//        int glowing = 15 + ((getPlayers().size() * 15) / 8);
+//        int doubleJump = glowing / 2;
 
         this.gameTimerTask = this.map.instance().scheduler().submitTask(new Supplier<>() {
             int secondsLeft = playTime;
