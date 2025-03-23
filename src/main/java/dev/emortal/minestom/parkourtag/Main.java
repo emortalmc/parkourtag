@@ -14,7 +14,7 @@ public final class Main {
     public static void main(String[] args) {
         NativeLibraryLoader.loadLibbulletjme(true, new File("natives/"), "Release", "Sp");
 
-        MinestomGameServer server = MinestomGameServer.create(() -> {
+        MinestomGameServer server = MinestomGameServer.create((a) -> {
             MapManager mapManager = new MapManager();
 
             // TODO: Fix signs

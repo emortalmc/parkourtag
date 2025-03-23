@@ -82,7 +82,7 @@ public class ParkourTagTickListener {
         instance.scheduler().buildTask(() -> {
             double tick = instance.getWorldAge();
 
-            ParticlePacket packet = new ParticlePacket(Particle.SNOWFLAKE, true, x + Math.sin(tick * spinSpeed) * spinScale, y, z + Math.cos(tick * spinSpeed) * spinScale, 0f, 0.5f, 0f, 1, 0);
+            ParticlePacket packet = new ParticlePacket(Particle.SNOWFLAKE, x + Math.sin(tick * spinSpeed) * spinScale, y, z + Math.cos(tick * spinSpeed) * spinScale, 0f, 0.5f, 0f, 1, 0);
 
             if (game.getGameStage() == GameStage.PRE_GAME) return;
             game.sendGroupedPacket(packet);

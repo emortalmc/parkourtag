@@ -12,7 +12,7 @@ import net.minestom.server.item.Material;
 import net.minestom.server.item.component.FireworkExplosion;
 import net.minestom.server.item.component.FireworkList;
 import net.minestom.server.network.packet.server.play.EntityStatusPacket;
-import net.minestom.server.utils.PacketUtils;
+import net.minestom.server.utils.PacketSendingUtils;
 
 import java.util.List;
 import java.util.Set;
@@ -28,7 +28,7 @@ public class FireworkUtils {
         firework.setInstance(instance, position);
 
         // Immediately explode
-        PacketUtils.sendGroupedPacket(players, new EntityStatusPacket(firework.getEntityId(), (byte) 17));
+        PacketSendingUtils.sendGroupedPacket(players, new EntityStatusPacket(firework.getEntityId(), (byte) 17));
 
         firework.remove();
     }

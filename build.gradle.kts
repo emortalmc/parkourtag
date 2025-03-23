@@ -1,6 +1,6 @@
 plugins {
     java
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("com.gradleup.shadow") version "9.0.0-beta11"
 }
 
 group = "dev.emortal.minestom.parkourtag"
@@ -17,9 +17,9 @@ repositories {
 }
 
 dependencies {
-    implementation("dev.emortal.minestom:game-sdk:884345c")
+    implementation("dev.emortal.minestom:game-sdk:0069937")
 
-    implementation("dev.hollowcube:polar:1.11.1")
+    implementation("dev.hollowcube:polar:1.13.0")
     implementation("net.kyori:adventure-text-minimessage:4.16.0")
 
     implementation("com.github.stephengold:Libbulletjme:21.2.1")

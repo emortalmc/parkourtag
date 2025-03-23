@@ -24,6 +24,8 @@ import net.minestom.server.item.component.HeadProfile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+
 public class RagdollPhysics implements MinecraftPhysicsObject {
     private static final PlayerSkin PLACEHOLDER_SKIN = new PlayerSkin("ewogICJ0aW1lc3RhbXAiIDogMTcyNDgwNjQxNDU1OCwKICAicHJvZmlsZUlkIiA6ICI3YmQ1YjQ1OTFlNmI0NzUzODI3NDFmYmQyZmU5YTRkNSIsCiAgInByb2ZpbGVOYW1lIiA6ICJlbW9ydGFsZGV2IiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2Q1YmQ1MDViMTBkM2I2YWZjOGY3NTI1OGIwMWE3YzQwMjFjNjFkODFkMjA1M2I4MDg4ZWUyYjhjMTA0NDE4OTMiCiAgICB9LAogICAgIkNBUEUiIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2NkOWQ4MmFiMTdmZDkyMDIyZGJkNGE4NmNkZTRjMzgyYTc1NDBlMTE3ZmFlN2I5YTI4NTM2NTg1MDVhODA2MjUiCiAgICB9CiAgfQp9", "vuqasGHA0u5lehBFVjdYLgFaQvxrLpOS2MO0XH+ATrLhv68022JiTHGnXdz1QFN5kXWQoo4IOoTFC2fAxcPctSFjxL7WTnPsQlwHAZgOuWA0xbyS/m9/2Lmz+bLaL1+dSe6rWxI/j2gGjMgw7Ugy2RsBmg2yTHu4vIT081ntuRjFCn3UaOzRvgbYXGJDnMs3C5nVKKtvbvzJXBonxZHqznJeY7dnRxK2G9Hp0Uu++cPcJ2G3nJRbtAuh4jn3v4gDhA+hbLLzonebiqaE7BNcqjKHfShcbPoZlq4FWnJdFVDeQ8WIP7sseAqcW3iRT4noIU5AKOqFt54ejgh1INVK2TquiVIbIsGTbh6tDR1mmMxYa7v0WFINInK7uAZbOvxejfCVJIJUh0/SsP4Wxeg9g8NzutdyKtuMcE3i/2FebPBTm1Mys+zUK5lmKOnQfDkxv1Te9LhR59NOIxROWUTbwhwcLiDyAn3MbjQzvFB1E4uvm92a3u8MjpJvqb2U4OMTkeb4Bx9MNqLSxmhizbrKjBRexRUQKMRBQpEdE6o2oFVax55AKF5GUeQ87LQ1AOeYpvqYllt/ihbVk6aiNApAoVIviUZ01X/Q5h4hGxtnztLa0NatjY09hRRj5/7h/mwSuPRVD46rJUrirU5Doh9uTIQAVYaptwhFqJESw9Jb8OI=");
 
@@ -106,7 +108,7 @@ public class RagdollPhysics implements MinecraftPhysicsObject {
             meta.setDisplayContext(ItemDisplayMeta.DisplayContext.THIRD_PERSON_RIGHT_HAND);
             meta.setItemStack(ItemStack.builder(Material.PLAYER_HEAD)
                     .set(ItemComponent.PROFILE, new HeadProfile(this.playerSkin))
-                    .customModelData(this.part.getCustomModelData()).build());
+                    .customModelData(List.of(), List.of(), List.of(this.part.getCustomModelData()), List.of()).build());
             meta.setScale(new Vec(PLAYER_SIZE));
             meta.setTranslation(new Vec(0, this.part.getYTranslation(), 0));
 

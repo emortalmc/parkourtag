@@ -9,7 +9,6 @@ public class NoTickEntity extends Entity {
     public NoTickEntity(@NotNull EntityType entityType) {
         super(entityType);
 
-        hasCollision = false;
         setNoGravity(true);
         hasPhysics = false;
     }
