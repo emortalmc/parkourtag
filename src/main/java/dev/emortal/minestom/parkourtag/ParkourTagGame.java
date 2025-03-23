@@ -89,6 +89,11 @@ public class ParkourTagGame extends Game {
     }
 
     @Override
+    public void onPreJoin(Player player) {
+        player.setRespawnPoint(SPAWN_POINT);
+    }
+
+    @Override
     public void onJoin(Player player) {
         player.setFlying(false);
         player.setAllowFlying(false);
@@ -96,8 +101,6 @@ public class ParkourTagGame extends Game {
         player.setTeam(null);
         player.setGlowing(false);
         player.setGameMode(GameMode.ADVENTURE);
-
-        player.setRespawnPoint(SPAWN_POINT);
     }
 
     @Override
