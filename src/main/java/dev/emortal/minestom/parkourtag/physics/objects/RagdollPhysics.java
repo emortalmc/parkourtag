@@ -10,6 +10,7 @@ import com.jme3.math.Vector3f;
 import dev.emortal.minestom.parkourtag.physics.MinecraftPhysicsHandler;
 import dev.emortal.minestom.parkourtag.physics.PlayerDisplayPart;
 import dev.emortal.minestom.parkourtag.utils.NoTickEntity;
+import net.minestom.server.component.DataComponents;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
@@ -17,7 +18,6 @@ import net.minestom.server.entity.Player;
 import net.minestom.server.entity.PlayerSkin;
 import net.minestom.server.entity.metadata.display.ItemDisplayMeta;
 import net.minestom.server.instance.Instance;
-import net.minestom.server.item.ItemComponent;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
 import net.minestom.server.item.component.HeadProfile;
@@ -107,7 +107,7 @@ public class RagdollPhysics implements MinecraftPhysicsObject {
             meta.setHeight(2);
             meta.setDisplayContext(ItemDisplayMeta.DisplayContext.THIRD_PERSON_RIGHT_HAND);
             meta.setItemStack(ItemStack.builder(Material.PLAYER_HEAD)
-                    .set(ItemComponent.PROFILE, new HeadProfile(this.playerSkin))
+                    .set(DataComponents.PROFILE, new HeadProfile(this.playerSkin))
                     .customModelData(List.of(), List.of(), List.of(this.part.getCustomModelData()), List.of()).build());
             meta.setScale(new Vec(PLAYER_SIZE));
             meta.setTranslation(new Vec(0, this.part.getYTranslation(), 0));

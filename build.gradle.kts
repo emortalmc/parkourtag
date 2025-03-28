@@ -17,10 +17,10 @@ repositories {
 }
 
 dependencies {
-    implementation("dev.emortal.minestom:game-sdk:505faaa")
+    implementation("dev.emortal.minestom:game-sdk:bcdce20")
 
     implementation("dev.hollowcube:polar:1.13.0")
-    implementation("net.kyori:adventure-text-minimessage:4.16.0")
+    implementation("net.kyori:adventure-text-minimessage:4.18.0")
 
     implementation("com.github.stephengold:Libbulletjme:21.2.1")
 }

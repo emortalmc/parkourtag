@@ -1,8 +1,8 @@
 package dev.emortal.minestom.parkourtag.blockhandler;
 
+import net.kyori.adventure.key.Key;
 import net.minestom.server.instance.block.BlockHandler;
 import net.minestom.server.tag.Tag;
-import net.minestom.server.utils.NamespaceID;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -20,7 +20,7 @@ public final class SignHandler implements BlockHandler {
     }
 
     @Override
-    public @NotNull NamespaceID getNamespaceId() {
-        return NamespaceID.from("minecraft:sign");
+    public @NotNull Key getKey() {
+        return Key.key("minecraft:sign");
     }
 }

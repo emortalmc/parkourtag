@@ -19,8 +19,10 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.channels.Channels;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -63,11 +65,13 @@ public final class MapManager {
                 MapData spawns = GSON.fromJson(new JsonReader(Files.newBufferedReader(spawnsPath)), MapData.class);
                 LOGGER.info("Loaded mapData for map {}: [{}]", mapName, spawns);
 
-                PolarLoader polarLoader = new PolarLoader(polarPath);
+                byte[] polarBytes = Files.readAllBytes(polarPath);
 
-                InstanceContainer instance = MinecraftServer.getInstanceManager().createInstanceContainer(dimension, polarLoader);
+                InstanceContainer instance = MinecraftServer.getInstanceManager().createInstanceContainer(dimension);
                 instance.setTimeRate(0);
                 instance.setTimeSynchronizationTicks(0);
+
+                PolarLoader.streamLoad(instance, Channels.newChannel(new ByteArrayInputStream(polarBytes)), polarBytes.length, null, null, true);
 
                 // Do some preloading!
                 List<PhysicsCollisionObject> chunkMeshes = new ArrayList<>();
