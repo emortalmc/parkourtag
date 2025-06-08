@@ -105,7 +105,7 @@ public class RagdollPhysics implements MinecraftPhysicsObject {
         entity.editEntityMeta(ItemDisplayMeta.class, meta -> {
             meta.setWidth(2);
             meta.setHeight(2);
-            meta.setDisplayContext(ItemDisplayMeta.DisplayContext.THIRD_PERSON_RIGHT_HAND);
+            meta.setDisplayContext(ItemDisplayMeta.DisplayContext.THIRDPERSON_RIGHT_HAND);
             meta.setItemStack(ItemStack.builder(Material.PLAYER_HEAD)
                     .set(DataComponents.PROFILE, new HeadProfile(this.playerSkin))
                     .customModelData(List.of(), List.of(), List.of(this.part.getCustomModelData()), List.of()).build());

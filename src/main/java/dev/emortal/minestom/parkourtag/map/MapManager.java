@@ -11,7 +11,7 @@ import net.minestom.server.instance.Chunk;
 import net.minestom.server.instance.IChunkLoader;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
-import net.minestom.server.registry.DynamicRegistry;
+import net.minestom.server.registry.RegistryKey;
 import net.minestom.server.tag.Tag;
 import net.minestom.server.world.DimensionType;
 import org.jetbrains.annotations.NotNull;
@@ -53,7 +53,7 @@ public final class MapManager {
     private final Map<String, PreLoadedMap> preLoadedMaps;
 
     public MapManager() {
-        DynamicRegistry.Key<DimensionType> dimension = MinecraftServer.getDimensionTypeRegistry().register("emortalmc:parkourtag", DIMENSION_TYPE);
+        RegistryKey<DimensionType> dimension = MinecraftServer.getDimensionTypeRegistry().register("emortalmc:parkourtag", DIMENSION_TYPE);
 
         Map<String, PreLoadedMap> maps = new HashMap<>();
         for (String mapName : ENABLED_MAPS) {
