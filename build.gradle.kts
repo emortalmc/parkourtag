@@ -1,6 +1,6 @@
 plugins {
     java
-    id("com.gradleup.shadow") version "9.0.0-beta15"
+    id("com.gradleup.shadow") version "9.0.0-rc1"
 }
 
 group = "dev.emortal.minestom.parkourtag"
@@ -17,12 +17,16 @@ repositories {
 }
 
 dependencies {
-    implementation("dev.emortal.minestom:game-sdk:af050c7")
+    implementation("dev.emortal.minestom:game-sdk:c30a7db")
 
-    implementation("dev.hollowcube:polar:1.14.2")
-    implementation("net.kyori:adventure-text-minimessage:4.20.0")
+    implementation("dev.hollowcube:polar:1.14.6")
+    implementation("net.kyori:adventure-text-minimessage:4.23.0")
 
-    implementation("com.github.stephengold:Libbulletjme:21.2.1")
+    // libbulletjme
+    implementation("com.github.stephengold:Libbulletjme-Windows64:22.0.1")
+    runtimeOnly("com.github.stephengold:Libbulletjme-Linux64:22.0.1:SpDebug")
+    runtimeOnly("com.github.stephengold:Libbulletjme-Windows64:22.0.1:SpDebug")
+    implementation("io.github.electrostat-lab:snaploader:1.1.1-stable")
 }
 
 java {
