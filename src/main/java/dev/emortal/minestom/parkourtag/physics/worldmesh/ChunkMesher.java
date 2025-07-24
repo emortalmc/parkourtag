@@ -1,12 +1,10 @@
 package dev.emortal.minestom.parkourtag.physics.worldmesh;
 
-import com.jme3.bullet.collision.PhysicsCollisionObject;
-import com.jme3.bullet.collision.shapes.MeshCollisionShape;
-import com.jme3.bullet.collision.shapes.infos.IndexedMesh;
-import com.jme3.bullet.objects.PhysicsBody;
-import com.jme3.bullet.objects.PhysicsRigidBody;
-import com.jme3.math.Triangle;
-import com.jme3.math.Vector3f;
+import com.github.stephengold.joltjni.BodyCreationSettings;
+import com.github.stephengold.joltjni.MeshShapeSettings;
+import com.github.stephengold.joltjni.Triangle;
+import com.github.stephengold.joltjni.enumerate.EMotionType;
+import dev.emortal.minestom.parkourtag.physics.MinecraftPhysics;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.collision.Shape;
 import net.minestom.server.coordinate.Point;
@@ -23,41 +21,34 @@ public class ChunkMesher {
 
     private static final BlockFace[] BLOCK_FACES = BlockFace.values();
 
-    public static @Nullable PhysicsCollisionObject createChunk(Chunk chunk) {
+    public static @Nullable BodyCreationSettings createChunk(Chunk chunk) {
         int minY = MinecraftServer.getDimensionTypeRegistry().get(chunk.getInstance().getDimensionType()).minY();
         int maxY = MinecraftServer.getDimensionTypeRegistry().get(chunk.getInstance().getDimensionType()).maxY();
 
         return generateChunkCollisionObject(chunk, minY, maxY);
     }
 
-    private static @Nullable PhysicsCollisionObject generateChunkCollisionObject(Chunk chunk, int minY, int maxY) {
-        List<Vector3f> vertices = new ArrayList<>();
+    private static @Nullable BodyCreationSettings generateChunkCollisionObject(Chunk chunk, int minY, int maxY) {
+        List<Face> faces = getChunkFaces(chunk, minY, maxY);
 
-        List<Quad> faces = getChunkFaces(chunk, minY, maxY);
-        for (Quad face : faces) {
-            for (Triangle triangle : face.triangles()) {
-                vertices.add(triangle.get1());
-                vertices.add(triangle.get2());
-                vertices.add(triangle.get3());
-            }
+        if (faces.isEmpty()) return null;
+
+        List<Triangle> triangles = new ArrayList<>();
+        for (Face face : faces) {
+            face.addTris(triangles);
         }
 
-        if (vertices.isEmpty()) return null;
+        MeshShapeSettings shapeSettings = new MeshShapeSettings(triangles);
 
-        Vector3f[] array = vertices.toArray(new Vector3f[0]);
+        BodyCreationSettings bodySettings = new BodyCreationSettings()
+                .setMotionType(EMotionType.Static)
+                .setObjectLayer(MinecraftPhysics.objLayerNonMoving)
+                .setShape(shapeSettings.create().get());
 
-        int[] indicesArray = new int[array.length];
-        for (int i = 0; i < array.length; i++) {
-            indicesArray[i] = i;
-        }
-
-        var indexedMesh = new IndexedMesh(array, indicesArray);
-        var shape = new MeshCollisionShape(true, indexedMesh);
-
-        return new PhysicsRigidBody(shape, PhysicsBody.massForStatic);
+        return bodySettings;
     }
 
-    private static List<Quad> getChunkFaces(Chunk chunk, int minY, int maxY) {
+    private static List<Face> getChunkFaces(Chunk chunk, int minY, int maxY) {
         int bottomY = maxY;
         int topY = minY;
 
@@ -78,12 +69,12 @@ public class ChunkMesher {
         }
 
 
-        List<Quad> finalFaces = new ArrayList<>();
+        List<Face> finalFaces = new ArrayList<>();
 
         for (int y = bottomY; y < topY; y++) {
             for (int x = 0; x < Chunk.CHUNK_SIZE_X; x++) {
                 for (int z = 0; z < Chunk.CHUNK_SIZE_Z; z++) {
-                    List<Quad> faces = getQuads(chunk, x, y, z);
+                    List<Face> faces = getFaces(chunk, x, y, z);
                     if (faces == null) continue;
                     finalFaces.addAll(faces);
                 }
@@ -93,11 +84,11 @@ public class ChunkMesher {
         return finalFaces;
     }
 
-    private static @Nullable List<Quad> getQuads(Chunk chunk, int x, int y, int z){
+    private static @Nullable List<Face> getFaces(Chunk chunk, int x, int y, int z){
         Block block = chunk.getBlock(x, y, z, Block.Getter.Condition.TYPE);
 
         if (block.isAir() || block.isLiquid()) return null;
-        List<Quad> quads = new ArrayList<>();
+        List<Face> faces = new ArrayList<>();
 
         Shape shape = block.registry().collisionShape();
         Point relStart = shape.relativeStart();
@@ -121,7 +112,7 @@ public class ChunkMesher {
             );
 
             if (!face.isEdge()) { // If face isn't an edge, we don't need to check neighbours
-                quads.add(face.toQuad());
+                faces.add(face);
                 continue;
             }
 
@@ -129,11 +120,11 @@ public class ChunkMesher {
             var neighbourBlock = chunk.getBlock(x + dir.normalX(), y + dir.normalY(), z + dir.normalZ(), Block.Getter.Condition.TYPE);
 
             if (!isFull(neighbourBlock)) {
-                quads.add(face.toQuad());
+                faces.add(face);
             }
         }
 
-        return quads;
+        return faces;
     }
 
     private static boolean isFull(Block block) {

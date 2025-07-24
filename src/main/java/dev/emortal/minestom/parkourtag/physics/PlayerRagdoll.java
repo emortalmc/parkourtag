@@ -1,10 +1,12 @@
 package dev.emortal.minestom.parkourtag.physics;
 
-import com.jme3.math.Quaternion;
-import com.jme3.math.Vector3f;
+import com.github.stephengold.joltjni.Body;
+import com.github.stephengold.joltjni.Quat;
+import com.github.stephengold.joltjni.RVec3;
 import dev.emortal.minestom.parkourtag.physics.objects.MinecraftPhysicsObject;
 import dev.emortal.minestom.parkourtag.physics.objects.RagdollPhysics;
 import dev.emortal.minestom.parkourtag.utils.PTQuaternion;
+import net.minestom.server.ServerFlag;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
@@ -14,27 +16,50 @@ import net.minestom.server.timer.TaskSchedule;
 
 import java.util.concurrent.ThreadLocalRandom;
 
+import static dev.emortal.minestom.parkourtag.utils.CoordinateUtils.toRVec3;
+import static dev.emortal.minestom.parkourtag.utils.CoordinateUtils.toVec3;
+
 public class PlayerRagdoll {
 
-    public static void spawnRagdollWithImpulse(MinecraftPhysicsHandler physicsHandler, Player player, Pos pos, Point impulse) {
+    public static MinecraftPhysicsObject spawnRagdollWithImpulse(MinecraftPhysics physics, Player player, Pos startPos, Point impulse) {
         Instance instance = player.getInstance();
 
-        pos = pos.add(0, 1.5, 0);
+        double playerSize = 1;
 
-        float yaw = -pos.yaw() + 180;
+        // all halves \/
+        Vec torsoSize = new Vec(4.0f/16.0f, 6.0f/16.0f, 2.0f/16.0f).mul(playerSize);
+//            Vector3 headSize = new Vector3(4.0f/16.0f, 4.0f/16.0f, 4.0f/16.0f);
+        Vec headSize = new Vec(3f/16.0f, 3.0f/16.0f, 3f/16.0f).mul(playerSize);
+//            Vector3 limbSize = new Vector3(2.0f/16.0f, 6.0f/16.0f, 2.0f/16.0f);
+        Vec limbSize = new Vec(1f/16.0f, 6.0f/16.0f, 1f/16.0f).mul(playerSize);
+
+        startPos = startPos.add(0, 1.5, 0);
+
+        float yaw = -startPos.yaw() + 180;
         double yawRad = Math.toRadians(yaw);
         PTQuaternion yawQuat = new PTQuaternion(new Vec(0, 1, 0), yawRad);
-        Quaternion yawQuat2 = new Quaternion((float) yawQuat.getX(), (float) yawQuat.getY(), (float) yawQuat.getZ(), (float) yawQuat.getW());
+        Quat yawQuat2 = new Quat((float) yawQuat.getX(), (float) yawQuat.getY(), (float) yawQuat.getZ(), (float) yawQuat.getW());
 
-        MinecraftPhysicsObject torso = new RagdollPhysics(physicsHandler, player,null, PlayerDisplayPart.TORSO, instance, MinecraftPhysicsObject.toVector3(pos), yawQuat2, 1);
-        MinecraftPhysicsObject head = new RagdollPhysics(physicsHandler, player, torso.getRigidBody(), PlayerDisplayPart.HEAD, instance, MinecraftPhysicsObject.toVector3(pos.add(new Vec(0, 0.62, 0).rotateAroundY(yawRad).mul(RagdollPhysics.PLAYER_SIZE))), yawQuat2, 1);
-        MinecraftPhysicsObject rightArm = new RagdollPhysics(physicsHandler, player, torso.getRigidBody(), PlayerDisplayPart.RIGHT_ARM, instance, MinecraftPhysicsObject.toVector3(pos.add(new Vec(0.37, 0, 0).rotateAroundY(yawRad).mul(RagdollPhysics.PLAYER_SIZE))), yawQuat2, 1);
-        MinecraftPhysicsObject leftArm = new RagdollPhysics(physicsHandler, player, torso.getRigidBody(), PlayerDisplayPart.LEFT_ARM, instance, MinecraftPhysicsObject.toVector3(pos.add(new Vec(-0.37, 0, 0).rotateAroundY(yawRad).mul(RagdollPhysics.PLAYER_SIZE))), yawQuat2, 1);
-        MinecraftPhysicsObject rightLeg = new RagdollPhysics(physicsHandler, player, torso.getRigidBody(), PlayerDisplayPart.RIGHT_LEG, instance, MinecraftPhysicsObject.toVector3(pos.add(new Vec(0.13, -0.72, 0).rotateAroundY(yawRad).mul(RagdollPhysics.PLAYER_SIZE))), yawQuat2, 1);
-        MinecraftPhysicsObject leftLeg = new RagdollPhysics(physicsHandler, player, torso.getRigidBody(), PlayerDisplayPart.LEFT_LEG, instance, MinecraftPhysicsObject.toVector3(pos.add(new Vec(-0.13, -0.72, 0).rotateAroundY(yawRad).mul(RagdollPhysics.PLAYER_SIZE))), yawQuat2, 1);
+        MinecraftPhysicsObject torso = new RagdollPhysics(physics, player,null, PlayerDisplayPart.TORSO, toRVec3(startPos), yawQuat2, torsoSize);
+        Body torsoBody = torso.getBody();
+        MinecraftPhysicsObject head = new RagdollPhysics(physics, player, torsoBody, PlayerDisplayPart.HEAD, toRVec3(startPos.add(new Vec(0,  torsoSize.y() * 2, 0).rotateAroundY(yawRad).mul(playerSize))), yawQuat2, headSize);
+        MinecraftPhysicsObject rightArm = new RagdollPhysics(physics, player, torsoBody, PlayerDisplayPart.RIGHT_ARM, toRVec3(startPos.add(new Vec((torsoSize.x() / 1.35) * 2, 0, 0).rotateAroundY(yawRad).mul(playerSize))), yawQuat2, limbSize);
+        MinecraftPhysicsObject leftArm = new RagdollPhysics(physics, player, torsoBody, PlayerDisplayPart.LEFT_ARM, toRVec3(startPos.add(new Vec((torsoSize.x() / 1.35) * -2, 0, 0).rotateAroundY(yawRad).mul(playerSize))), yawQuat2, limbSize);
+        MinecraftPhysicsObject rightLeg = new RagdollPhysics(physics, player, torsoBody, PlayerDisplayPart.RIGHT_LEG, toRVec3(startPos.add(new Vec(0.13, -0.72, 0).rotateAroundY(yawRad).mul(playerSize))), yawQuat2, limbSize);
+        MinecraftPhysicsObject leftLeg = new RagdollPhysics(physics, player, torsoBody, PlayerDisplayPart.LEFT_LEG, toRVec3(startPos.add(new Vec(-0.13, -0.72, 0).rotateAroundY(yawRad).mul(playerSize))), yawQuat2, limbSize);
 
+        torso.setInstance();
+        head.setInstance();
+        rightArm.setInstance();
+        leftArm.setInstance();
+        rightLeg.setInstance();
+        leftLeg.setInstance();
+
+        RVec3 torsoPos = torso.getBody().getPosition();
         ThreadLocalRandom rand = ThreadLocalRandom.current();
-        torso.getRigidBody().applyImpulse(MinecraftPhysicsObject.toVector3(impulse), new Vector3f(rand.nextFloat(-1f, 1f), rand.nextFloat(-1.5f, 1.5f), rand.nextFloat(-1f, 1f)));
+        RVec3 impulsePos = new RVec3(rand.nextFloat(-1f, 1f), rand.nextFloat(-1.5f, 1.5f), rand.nextFloat(-1f, 1f));
+        impulsePos.addInPlace(torsoPos.xx(), torsoPos.yy(), torsoPos.zz());
+        torso.getBody().addImpulse(toVec3(impulse), impulsePos);
 
         instance.scheduler().buildTask(() -> {
             torso.destroy();
@@ -43,8 +68,9 @@ public class PlayerRagdoll {
             leftLeg.destroy();
             rightLeg.destroy();
             leftArm.destroy();
-        }).delay(TaskSchedule.tick(20 * 10)).schedule();
+        }).delay(TaskSchedule.tick(20 * ServerFlag.SERVER_TICKS_PER_SECOND)).schedule();
 
+        return torso;
     }
 
 }

@@ -4,9 +4,9 @@ import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
 import org.jetbrains.annotations.NotNull;
 
-public class NoTickEntity extends Entity {
+public class NoTickingEntity extends Entity {
 
-    public NoTickEntity(@NotNull EntityType entityType) {
+    public NoTickingEntity(@NotNull EntityType entityType) {
         super(entityType);
 
         setNoGravity(true);

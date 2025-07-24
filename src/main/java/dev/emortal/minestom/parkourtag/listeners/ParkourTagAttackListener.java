@@ -10,19 +10,27 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.title.Title;
+import net.minestom.server.ServerFlag;
+import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
+import net.minestom.server.entity.Entity;
+import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
+import net.minestom.server.entity.metadata.display.TextDisplayMeta;
 import net.minestom.server.event.Event;
 import net.minestom.server.event.EventNode;
 import net.minestom.server.event.entity.EntityAttackEvent;
 import net.minestom.server.network.packet.server.play.HitAnimationPacket;
 import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.tag.Tag;
+import net.minestom.server.timer.TaskSchedule;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+
+import static dev.emortal.minestom.parkourtag.utils.CoordinateUtils.toVec;
 
 public class ParkourTagAttackListener {
 
@@ -88,8 +96,37 @@ public class ParkourTagAttackListener {
             target.setAutoViewable(false);
             target.setGlowing(false);
 
-            Vec impulse = attacker.getPosition().direction().mul(60);
-            PlayerRagdoll.spawnRagdollWithImpulse(game.getPhysicsHandler(), target, target.getPosition(), impulse);
+            Vec impulse = attacker.getPosition().direction().mul(3000);
+            var torso = PlayerRagdoll.spawnRagdollWithImpulse(game.getPhysics(), target, target.getPosition(), impulse);
+
+            Entity spectatingEntity = new Entity(EntityType.TEXT_DISPLAY);
+            spectatingEntity.setNoGravity(true);
+            spectatingEntity.editEntityMeta(TextDisplayMeta.class, meta -> {
+                meta.setPosRotInterpolationDuration(5);
+            });
+            Pos pos = torso.getEntity().getPosition().sub(attacker.getPosition().direction().mul(3)).withLookAt(torso.getEntity().getPosition());
+            spectatingEntity.setInstance(game.getInstance(), pos).thenRun(() -> {
+                spectatingEntity.scheduler().buildTask(new Runnable() {
+                    Vec lastDir = null;
+
+                    @Override
+                    public void run() {
+                        double lengthSq = torso.getBody().getLinearVelocity().lengthSq();
+
+                        if (lastDir == null || lengthSq > 5*5) lastDir = toVec(torso.getBody().getLinearVelocity()).normalize();
+
+                        spectatingEntity.teleport(torso.getEntity().getPosition().sub(lastDir.mul(3)).withLookAt(torso.getEntity().getPosition()));
+                    }
+                }).repeat(TaskSchedule.tick(1)).schedule();
+
+                target.spectate(spectatingEntity);
+            });
+
+            game.getInstance().scheduler().buildTask(() -> {
+                target.lookAt(torso.getEntity().getPosition());
+                spectatingEntity.remove();
+                target.stopSpectating();
+            }).delay(TaskSchedule.tick(4 * ServerFlag.SERVER_TICKS_PER_SECOND)).schedule();
 
             game.getTaggers().remove(target);
             game.getGoons().remove(target);

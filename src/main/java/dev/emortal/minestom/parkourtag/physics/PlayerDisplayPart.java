@@ -1,23 +1,18 @@
 package dev.emortal.minestom.parkourtag.physics;
 
-import com.jme3.math.Vector3f;
-import dev.emortal.minestom.parkourtag.physics.objects.RagdollPhysics;
-
 public enum PlayerDisplayPart {
-    HEAD(0, "phys_head", RagdollPhysics.HEAD_SIZE),
-    RIGHT_ARM(-1024, "phys_right_arm", RagdollPhysics.LIMB_SIZE),
-    LEFT_ARM(-2048, "phys_left_arm", RagdollPhysics.LIMB_SIZE),
-    TORSO(-3072, "phys_torso", RagdollPhysics.TORSO_SIZE),
-    RIGHT_LEG(-4096, "phys_right_leg", RagdollPhysics.LIMB_SIZE),
-    LEFT_LEG(-5120, "phys_left_leg", RagdollPhysics.LIMB_SIZE);
+    HEAD(0, "animated_java:blueprint/player_display/head"),
+    RIGHT_ARM(-1024, "animated_java:blueprint/player_display/right_arm"),
+    LEFT_ARM(-2048, "animated_java:blueprint/player_display/left_arm"),
+    TORSO(-3072, "animated_java:blueprint/player_display/torso"),
+    RIGHT_LEG(-4096, "animated_java:blueprint/player_display/right_leg"),
+    LEFT_LEG(-5120, "animated_java:blueprint/player_display/left_leg");
 
     private final double yTranslation;
     private final String customModelData;
-    private final Vector3f size;
-    PlayerDisplayPart(double yTranslation, String customModelData, Vector3f size) {
+    PlayerDisplayPart(double yTranslation, String customModelData) {
         this.yTranslation = yTranslation;
         this.customModelData = customModelData;
-        this.size = size;
     }
 
     public double getYTranslation() {
@@ -26,9 +21,5 @@ public enum PlayerDisplayPart {
 
     public String getCustomModelData() {
         return customModelData;
-    }
-
-    public Vector3f getSize() {
-        return size;
     }
 }

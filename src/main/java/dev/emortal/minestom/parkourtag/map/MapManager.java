@@ -1,13 +1,13 @@
 package dev.emortal.minestom.parkourtag.map;
 
+import com.github.stephengold.joltjni.BodyCreationSettings;
+import com.github.stephengold.joltjni.enumerate.EActivation;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
-import com.jme3.bullet.collision.PhysicsCollisionObject;
-import dev.emortal.minestom.parkourtag.physics.MinecraftPhysicsHandler;
+import dev.emortal.minestom.parkourtag.physics.MinecraftPhysics;
 import dev.emortal.minestom.parkourtag.physics.worldmesh.ChunkMesher;
 import net.hollowcube.polar.PolarLoader;
 import net.minestom.server.MinecraftServer;
-import net.minestom.server.instance.Chunk;
 import net.minestom.server.instance.IChunkLoader;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
@@ -70,29 +70,22 @@ public final class MapManager {
                 InstanceContainer instance = MinecraftServer.getInstanceManager().createInstanceContainer(dimension);
                 instance.setTimeRate(0);
                 instance.setTimeSynchronizationTicks(0);
+                instance.setChunkLoader(IChunkLoader.noop());
 
-                PolarLoader.streamLoad(instance, Channels.newChannel(new ByteArrayInputStream(polarBytes)), polarBytes.length, null, null, true);
+                PolarLoader.streamLoad(instance, Channels.newChannel(new ByteArrayInputStream(polarBytes)), polarBytes.length, null, null, true).join();
 
                 // Do some preloading!
-                List<PhysicsCollisionObject> chunkMeshes = new ArrayList<>();
-                List<CompletableFuture<Chunk>> futures = new ArrayList<>();
+                List<CompletableFuture<BodyCreationSettings>> futures = new ArrayList<>();
                 for (int x = -CHUNK_LOADING_RADIUS; x < CHUNK_LOADING_RADIUS; x++) {
                     for (int z = -CHUNK_LOADING_RADIUS; z < CHUNK_LOADING_RADIUS; z++) {
-                        CompletableFuture<Chunk> future = instance.loadChunk(x, z);
+                        CompletableFuture<BodyCreationSettings> future = instance.loadChunk(x, z)
+                                .thenApply(ChunkMesher::createChunk);
+
                         futures.add(future);
-                        future.thenAccept((chunk) -> {
-                            PhysicsCollisionObject obj = ChunkMesher.createChunk(chunk);
-                            if (obj != null) chunkMeshes.add(obj);
-                        });
                     }
                 }
 
-                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).thenRun(() -> {
-                    // Replace polar loader after all chunks are loaded to save memory
-                    instance.setChunkLoader(IChunkLoader.noop());
-                });
-
-                maps.put(mapName, new PreLoadedMap(instance, spawns, chunkMeshes));
+                maps.put(mapName, new PreLoadedMap(instance, spawns, futures));
             } catch (IOException exception) {
                 throw new UncheckedIOException(exception);
             }
@@ -122,18 +115,23 @@ public final class MapManager {
         return map.load(randomMapId);
     }
 
-    private record PreLoadedMap(@NotNull InstanceContainer rootInstance, @NotNull MapData mapData, @NotNull List<PhysicsCollisionObject> chunkMeshes) {
+    private record PreLoadedMap(@NotNull InstanceContainer rootInstance, @NotNull MapData mapData, List<CompletableFuture<BodyCreationSettings>> meshes) {
 
         @NotNull LoadedMap load(@NotNull String mapId) {
             Instance shared = MinecraftServer.getInstanceManager().createSharedInstance(this.rootInstance());
 
-            MinecraftPhysicsHandler physicsHandler = new MinecraftPhysicsHandler(shared, chunkMeshes);
+            MinecraftPhysics physics = new MinecraftPhysics(shared);
+            for (CompletableFuture<BodyCreationSettings> mesh : meshes) {
+                mesh.thenAccept(m -> {
+                    physics.getBodyInterface().createAndAddBody(m, EActivation.DontActivate);
+                });
+            }
 
             shared.setTag(MAP_ID_TAG, mapId);
             shared.setTimeRate(0);
             shared.setTimeSynchronizationTicks(0);
 
-            return new LoadedMap(shared, this.mapData(), physicsHandler);
+            return new LoadedMap(shared, this.mapData(), physics);
         }
     }
 }

@@ -1,7 +1,10 @@
 package dev.emortal.minestom.parkourtag.physics.worldmesh;
 
-import com.jme3.math.Vector3f;
+import com.github.stephengold.joltjni.Triangle;
+import com.github.stephengold.joltjni.Vec3;
 import net.minestom.server.instance.block.BlockFace;
+
+import java.util.List;
 
 public record Face(BlockFace blockFace, float minX, float minY, float minZ, float maxX, float maxY, float maxZ, int blockX, int blockY, int blockZ) {
 
@@ -20,26 +23,53 @@ public record Face(BlockFace blockFace, float minX, float minY, float minZ, floa
         };
     }
 
-    public Quad toQuad() {
-        return switch (blockFace) {
-            case TOP, BOTTOM -> new Quad(
-                    new Vector3f(minX + blockX, maxY + blockY, minZ + blockZ),
-                    new Vector3f(maxX + blockX, maxY + blockY, minZ + blockZ),
-                    new Vector3f(maxX + blockX, maxY + blockY, maxZ + blockZ),
-                    new Vector3f(minX + blockX, maxY + blockY, maxZ + blockZ)
-            );
-            case EAST, WEST -> new Quad(
-                    new Vector3f(maxX + blockX, minY + blockY, minZ + blockZ),
-                    new Vector3f(maxX + blockX, maxY + blockY, minZ + blockZ),
-                    new Vector3f(maxX + blockX, maxY + blockY, maxZ + blockZ),
-                    new Vector3f(maxX + blockX, minY + blockY, maxZ + blockZ)
-            );
-            case NORTH, SOUTH -> new Quad(
-                    new Vector3f(minX + blockX, minY + blockY, minZ + blockZ),
-                    new Vector3f(maxX + blockX, minY + blockY, minZ + blockZ),
-                    new Vector3f(maxX + blockX, maxY + blockY, minZ + blockZ),
-                    new Vector3f(minX + blockX, maxY + blockY, minZ + blockZ)
-            );
-        };
+    public void addTris(List<Triangle> triangles) {
+        Vec3 point1;
+        Vec3 point2;
+        Vec3 point3;
+        Vec3 point4;
+
+        switch (blockFace) {
+            case TOP -> {
+                point1 = new Vec3(minX + blockX, maxY + blockY, minZ + blockZ);
+                point2 = new Vec3(maxX + blockX, maxY + blockY, minZ + blockZ);
+                point3 = new Vec3(maxX + blockX, maxY + blockY, maxZ + blockZ);
+                point4 = new Vec3(minX + blockX, maxY + blockY, maxZ + blockZ);
+            }
+            case BOTTOM -> {
+                point1 = new Vec3(maxX + blockX, maxY + blockY, maxZ + blockZ);
+                point2 = new Vec3(maxX + blockX, maxY + blockY, minZ + blockZ);
+                point3 = new Vec3(minX + blockX, maxY + blockY, minZ + blockZ);
+                point4 = new Vec3(minX + blockX, maxY + blockY, maxZ + blockZ);
+            }
+            case WEST -> {
+                point1 = new Vec3(maxX + blockX, minY + blockY, minZ + blockZ);
+                point2 = new Vec3(maxX + blockX, maxY + blockY, minZ + blockZ);
+                point3 = new Vec3(maxX + blockX, maxY + blockY, maxZ + blockZ);
+                point4 = new Vec3(maxX + blockX, minY + blockY, maxZ + blockZ);
+            }
+            case EAST -> {
+                point1 = new Vec3(maxX + blockX, maxY + blockY, maxZ + blockZ);
+                point2 = new Vec3(maxX + blockX, maxY + blockY, minZ + blockZ);
+                point3 = new Vec3(maxX + blockX, minY + blockY, minZ + blockZ);
+                point4 = new Vec3(maxX + blockX, minY + blockY, maxZ + blockZ);
+            }
+            case SOUTH -> {
+                point1 = new Vec3(maxX + blockX, maxY + blockY, minZ + blockZ);
+                point2 = new Vec3(maxX + blockX, minY + blockY, minZ + blockZ);
+                point3 = new Vec3(minX + blockX, minY + blockY, minZ + blockZ);
+                point4 = new Vec3(minX + blockX, maxY + blockY, minZ + blockZ);
+            }
+            case NORTH -> {
+                point1 = new Vec3(minX + blockX, minY + blockY, minZ + blockZ);
+                point2 = new Vec3(maxX + blockX, minY + blockY, minZ + blockZ);
+                point3 = new Vec3(maxX + blockX, maxY + blockY, minZ + blockZ);
+                point4 = new Vec3(minX + blockX, maxY + blockY, minZ + blockZ);
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + blockFace);
+        }
+
+        triangles.add(new Triangle(point3, point2, point1));
+        triangles.add(new Triangle(point1, point4, point3));
     }
 }

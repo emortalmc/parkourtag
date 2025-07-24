@@ -22,10 +22,10 @@ dependencies {
     implementation("dev.hollowcube:polar:1.14.6")
     implementation("net.kyori:adventure-text-minimessage:4.23.0")
 
-    // libbulletjme
-    implementation("com.github.stephengold:Libbulletjme-Windows64:22.0.1")
-    runtimeOnly("com.github.stephengold:Libbulletjme-Linux64:22.0.1:SpDebug")
-    runtimeOnly("com.github.stephengold:Libbulletjme-Windows64:22.0.1:SpDebug")
+    // jolt-jni
+    implementation("com.github.stephengold:jolt-jni-Windows64:2.0.1")
+    runtimeOnly("com.github.stephengold:jolt-jni-Linux64:2.0.1:ReleaseSp")
+    runtimeOnly("com.github.stephengold:jolt-jni-Windows64:2.0.1:ReleaseSp")
     implementation("io.github.electrostat-lab:snaploader:1.1.1-stable")
 }
 

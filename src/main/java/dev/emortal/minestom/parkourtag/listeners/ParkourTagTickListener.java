@@ -3,7 +3,7 @@ package dev.emortal.minestom.parkourtag.listeners;
 import dev.emortal.minestom.parkourtag.GameStage;
 import dev.emortal.minestom.parkourtag.ParkourTagGame;
 import dev.emortal.minestom.parkourtag.map.MapManager;
-import dev.emortal.minestom.parkourtag.utils.NoTickEntity;
+import dev.emortal.minestom.parkourtag.utils.NoTickingEntity;
 import dev.emortal.minestom.parkourtag.utils.PTQuaternion;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
@@ -96,7 +96,7 @@ public class ParkourTagTickListener {
         Component on = Component.text(">", NamedTextColor.GOLD);
         Component off = Component.text(">", NamedTextColor.DARK_GRAY);
 
-        Entity entity = new NoTickEntity(EntityType.TEXT_DISPLAY);
+        Entity entity = new NoTickingEntity(EntityType.TEXT_DISPLAY);
         TextDisplayMeta meta = (TextDisplayMeta) entity.getEntityMeta();
         meta.setText(off);
         meta.setBackgroundColor(0);

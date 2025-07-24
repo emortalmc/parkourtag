@@ -10,7 +10,7 @@ import dev.emortal.minestom.parkourtag.listeners.ParkourTagDoubleJumpListener;
 import dev.emortal.minestom.parkourtag.listeners.ParkourTagTickListener;
 import dev.emortal.minestom.parkourtag.map.LoadedMap;
 import dev.emortal.minestom.parkourtag.map.MapData;
-import dev.emortal.minestom.parkourtag.physics.MinecraftPhysicsHandler;
+import dev.emortal.minestom.parkourtag.physics.MinecraftPhysics;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Metrics;
 import net.kyori.adventure.bossbar.BossBar;
@@ -459,15 +459,15 @@ public class ParkourTagGame extends Game {
         return map;
     }
 
-    public MinecraftPhysicsHandler getPhysicsHandler() {
-        return getMap().physicsHandler();
+    public MinecraftPhysics getPhysics() {
+        return getMap().physics();
     }
 
     @Override
     public void cleanUp() {
         this.map.instance().scheduleNextTick(MinecraftServer.getInstanceManager()::unregisterInstance);
 
-        this.getPhysicsHandler().cleanup();
+        this.getPhysics().clear();
 
         MinecraftServer.getBossBarManager().destroyBossBar(this.bossBar);
         if (this.gameTimerTask != null) this.gameTimerTask.cancel();
