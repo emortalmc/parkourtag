@@ -13,7 +13,6 @@ import electrostatic4j.snaploader.filesystem.DirectoryPath;
 import electrostatic4j.snaploader.platform.NativeDynamicLibrary;
 import electrostatic4j.snaploader.platform.util.PlatformPredicate;
 import net.minestom.server.MinecraftServer;
-import net.minestom.server.extras.MojangAuth;
 
 public final class Main {
 
@@ -46,15 +45,13 @@ public final class Main {
         Jolt.registerTypes();
 
         MinestomGameServer server = MinestomGameServer.create((a) -> {
-            MapManager mapManager = new MapManager();
-
-            MojangAuth.init();
-
-            // TODO: Fix signs
-//            MinecraftServer.getBlockManager().registerHandler("minecraft:sign", SignHandler::new);
+//            BlockManager blockManager = MinecraftServer.getBlockManager();
+//            blockManager.registerHandler("minecraft:sign", SignHandler::new);
 //            for (Block value : Block.values()) {
-//                if (value.name().endsWith("sign")) MinecraftServer.getBlockManager().registerHandler(value.namespace(), SignHandler::new);
+//                if (value.name().endsWith("sign")) blockManager.registerHandler(value.key(), SignHandler::new);
 //            }
+
+            MapManager mapManager = new MapManager();
 
             return GameSdkConfig.builder()
                     .minPlayers(ParkourTagGame.MIN_PLAYERS)
