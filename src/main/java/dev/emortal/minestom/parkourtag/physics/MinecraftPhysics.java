@@ -30,7 +30,7 @@ public class MinecraftPhysics {
     private @NotNull JobSystem jobSystem;
 
     private final @NotNull List<MinecraftPhysicsObject> objects = new CopyOnWriteArrayList<>();
-    private final @NotNull Map<Body, MinecraftPhysicsObject> objectMap = new ConcurrentHashMap<>();
+    private final @NotNull Map<Long, MinecraftPhysicsObject> objectMap = new ConcurrentHashMap<>();
     private final Instance instance;
 
     public MinecraftPhysics(Instance instance) {
@@ -119,41 +119,39 @@ public class MinecraftPhysics {
         return objects;
     }
 
-    public @Nullable Body getBodyById(int id) {
-        return new BodyLockRead(physicsSystem.getBodyLockInterfaceNoLock(), id).getBody();
-    }
-
     public void addObject(MinecraftPhysicsObject object) {
         objects.add(object);
-        objectMap.put(object.getBody(), object);
+        objectMap.put(object.getBody().va(), object);
     }
     public void removeObject(MinecraftPhysicsObject object) {
         objects.remove(object);
-        objectMap.remove(object.getBody());
+        objectMap.remove(object.getBody().va());
     }
 
     public void addConstraint(Constraint constraint) {
         physicsSystem.addConstraint(constraint);
         if (constraint instanceof TwoBodyConstraint twoBodyConstraint) {
-            MinecraftPhysicsObject obj1 = getObjectByBody(twoBodyConstraint.getBody1());
-            if (obj1 != null) obj1.addRelatedConstraint(constraint);
-            MinecraftPhysicsObject obj2 = getObjectByBody(twoBodyConstraint.getBody2());
-            if (obj2 != null) obj2.addRelatedConstraint(constraint);
+            MinecraftPhysicsObject obj1 = getObjectByVa(twoBodyConstraint.getBody1().va());
+            TwoBodyConstraintRef ref = twoBodyConstraint.toRef();
+            if (obj1 != null) obj1.addRelatedConstraint(ref);
+            MinecraftPhysicsObject obj2 = getObjectByVa(twoBodyConstraint.getBody2().va());
+            if (obj2 != null) obj2.addRelatedConstraint(ref);
         }
     }
 
     public void removeConstraint(Constraint constraint) {
         physicsSystem.removeConstraint(constraint);
         if (constraint instanceof TwoBodyConstraint twoBodyConstraint) {
-            MinecraftPhysicsObject obj1 = getObjectByBody(twoBodyConstraint.getBody1());
-            if (obj1 != null) obj1.removeRelatedConstraint(constraint);
-            MinecraftPhysicsObject obj2 = getObjectByBody(twoBodyConstraint.getBody2());
-            if (obj2 != null) obj2.removeRelatedConstraint(constraint);
+            TwoBodyConstraintRef ref = twoBodyConstraint.toRef();
+            MinecraftPhysicsObject obj1 = getObjectByVa(twoBodyConstraint.getBody1().va());
+            if (obj1 != null) obj1.removeRelatedConstraint(ref);
+            MinecraftPhysicsObject obj2 = getObjectByVa(twoBodyConstraint.getBody2().va());
+            if (obj2 != null) obj2.removeRelatedConstraint(ref);
         }
     }
 
-    public @Nullable MinecraftPhysicsObject getObjectByBody(Body physicsObject) {
-        return objectMap.get(physicsObject);
+    public @Nullable MinecraftPhysicsObject getObjectByVa(Long va) {
+        return objectMap.get(va);
     }
 
     public void clear() {

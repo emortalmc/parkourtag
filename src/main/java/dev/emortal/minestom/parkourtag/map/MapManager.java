@@ -6,9 +6,10 @@ import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import dev.emortal.minestom.parkourtag.physics.MinecraftPhysics;
 import dev.emortal.minestom.parkourtag.physics.worldmesh.ChunkMesher;
+import dev.emortal.minestom.parkourtag.utils.PolarChainFix;
 import net.hollowcube.polar.PolarLoader;
 import net.minestom.server.MinecraftServer;
-import net.minestom.server.instance.IChunkLoader;
+import net.minestom.server.instance.ChunkLoader;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.registry.RegistryKey;
@@ -70,9 +71,9 @@ public final class MapManager {
                 InstanceContainer instance = MinecraftServer.getInstanceManager().createInstanceContainer(dimension);
                 instance.setTimeRate(0);
                 instance.setTimeSynchronizationTicks(0);
-                instance.setChunkLoader(IChunkLoader.noop());
+                instance.setChunkLoader(ChunkLoader.noop());
 
-                PolarLoader.streamLoad(instance, Channels.newChannel(new ByteArrayInputStream(polarBytes)), polarBytes.length, null, null, true).join();
+                PolarLoader.streamLoad(instance, Channels.newChannel(new ByteArrayInputStream(polarBytes)), polarBytes.length, new PolarChainFix(), null, true).join();
 
                 // Do some preloading!
                 List<CompletableFuture<BodyCreationSettings>> futures = new ArrayList<>();

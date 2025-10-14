@@ -16,7 +16,7 @@ import net.minestom.server.MinecraftServer;
 
 public final class Main {
 
-    public static void main(String[] args) {
+    void main() {
         LibraryInfo libInfo = new LibraryInfo(null, "joltjni", DirectoryPath.USER_DIR);
         NativeBinaryLoader loader = new NativeBinaryLoader(libInfo);
         NativeDynamicLibrary[] libraries = {
@@ -44,7 +44,7 @@ public final class Main {
         assert success;
         Jolt.registerTypes();
 
-        MinestomGameServer server = MinestomGameServer.create((a) -> {
+        MinestomGameServer server = MinestomGameServer.create((_) -> {
 //            BlockManager blockManager = MinecraftServer.getBlockManager();
 //            blockManager.registerHandler("minecraft:sign", SignHandler::new);
 //            for (Block value : Block.values()) {

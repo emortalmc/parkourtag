@@ -1,6 +1,6 @@
 plugins {
     java
-    id("com.gradleup.shadow") version "9.0.0-rc1"
+    id("com.gradleup.shadow") version "9.2.2"
 }
 
 group = "dev.emortal.minestom.parkourtag"
@@ -17,21 +17,22 @@ repositories {
 }
 
 dependencies {
-    implementation("dev.emortal.minestom:game-sdk:c30a7db")
+    implementation("dev.emortal.minestom:game-sdk:3847948")
 
-    implementation("dev.hollowcube:polar:1.14.6")
-    implementation("net.kyori:adventure-text-minimessage:4.23.0")
+    implementation("dev.hollowcube:polar:1.15.0")
+    compileOnly("it.unimi.dsi:fastutil:8.5.18")
+    implementation("net.kyori:adventure-text-minimessage:4.25.0")
 
     // jolt-jni
-    implementation("com.github.stephengold:jolt-jni-Windows64:2.0.1")
-    runtimeOnly("com.github.stephengold:jolt-jni-Linux64:2.0.1:ReleaseSp")
-    runtimeOnly("com.github.stephengold:jolt-jni-Windows64:2.0.1:ReleaseSp")
+    implementation("com.github.stephengold:jolt-jni-Windows64:3.4.0")
+    runtimeOnly("com.github.stephengold:jolt-jni-Linux64:3.4.0:ReleaseSp")
+    runtimeOnly("com.github.stephengold:jolt-jni-Windows64:3.4.0:ReleaseSp")
     implementation("io.github.electrostat-lab:snaploader:1.1.1-stable")
 }
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(25))
     }
 }
 

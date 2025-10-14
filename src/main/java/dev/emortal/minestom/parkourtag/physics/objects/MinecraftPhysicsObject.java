@@ -16,7 +16,7 @@ import static dev.emortal.minestom.parkourtag.utils.CoordinateUtils.*;
 public abstract class MinecraftPhysicsObject {
 
     private final List<Integer> relatedBodies = new CopyOnWriteArrayList<>();
-    private final List<Constraint> constraints = new CopyOnWriteArrayList<>();
+    private final List<TwoBodyConstraintRef> constraints = new CopyOnWriteArrayList<>();
 
     private final @NotNull MinecraftPhysics mcPhysics;
     private final @NotNull BodyCreationSettings bodySettings;
@@ -43,8 +43,12 @@ public abstract class MinecraftPhysicsObject {
         this.relatedBodies.add(related.getId());
     }
 
-    public void addRelatedConstraint(Constraint related) {
+    public void addRelatedConstraint(TwoBodyConstraintRef related) {
         this.constraints.add(related);
+    }
+
+    public void removeRelatedConstraint(TwoBodyConstraintRef related) {
+        this.constraints.remove(related);
     }
 
     public void removeRelatedConstraint(Constraint related) {
@@ -52,8 +56,8 @@ public abstract class MinecraftPhysicsObject {
     }
 
     public void destroy() {
-        for (Constraint constraint : constraints) {
-            mcPhysics.removeConstraint(constraint);
+        for (TwoBodyConstraintRef constraint : constraints) {
+            mcPhysics.removeConstraint(constraint.getPtr());
         }
 
         for (int relatedObject : relatedBodies) {

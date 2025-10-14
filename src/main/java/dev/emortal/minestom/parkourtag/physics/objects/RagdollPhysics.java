@@ -18,7 +18,7 @@ import net.minestom.server.entity.PlayerSkin;
 import net.minestom.server.entity.metadata.display.ItemDisplayMeta;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.item.Material;
-import net.minestom.server.item.component.HeadProfile;
+import net.minestom.server.network.player.ResolvableProfile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -117,7 +117,7 @@ public class RagdollPhysics extends MinecraftPhysicsObject {
             meta.setItemStack(
                     ItemStack.builder(Material.PLAYER_HEAD)
                             .itemModel(this.part.getCustomModelData())
-                            .set(DataComponents.PROFILE, new HeadProfile(this.playerSkin))
+                            .set(DataComponents.PROFILE, new ResolvableProfile(this.playerSkin))
                             .customModelData(List.of(), List.of(), List.of("physics"), List.of())
                             .build()
             );
