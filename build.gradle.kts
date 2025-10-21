@@ -24,6 +24,7 @@ dependencies {
     implementation("net.kyori:adventure-text-minimessage:4.25.0")
 
     // jolt-jni
+    runtimeOnly("com.github.oshi:oshi-core:6.9.0")
     implementation("com.github.stephengold:jolt-jni-Windows64:3.4.0")
     runtimeOnly("com.github.stephengold:jolt-jni-Linux64:3.4.0:ReleaseSp")
     runtimeOnly("com.github.stephengold:jolt-jni-Windows64:3.4.0:ReleaseSp")
