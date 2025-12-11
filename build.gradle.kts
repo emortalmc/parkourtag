@@ -17,7 +17,7 @@ repositories {
 }
 
 dependencies {
-    implementation("dev.emortal.minestom:game-sdk:3847948")
+    implementation("dev.emortal.minestom:game-sdk:fe1f6a1")
 
     implementation("dev.hollowcube:polar:1.15.0")
     compileOnly("it.unimi.dsi:fastutil:8.5.18")
@@ -57,5 +57,10 @@ tasks {
 
     build {
         dependsOn(shadowJar)
+    }
+
+    withType<JavaCompile> {
+        options.encoding = "UTF-8"
+        options.isDeprecation = true
     }
 }

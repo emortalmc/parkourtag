@@ -8,13 +8,16 @@ import dev.emortal.minestom.parkourtag.physics.MinecraftPhysics;
 import dev.emortal.minestom.parkourtag.physics.worldmesh.ChunkMesher;
 import dev.emortal.minestom.parkourtag.utils.PolarChainFix;
 import net.hollowcube.polar.PolarLoader;
+import net.kyori.adventure.text.format.ShadowColor;
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.color.Color;
 import net.minestom.server.instance.ChunkLoader;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceContainer;
 import net.minestom.server.registry.RegistryKey;
 import net.minestom.server.tag.Tag;
 import net.minestom.server.world.DimensionType;
+import net.minestom.server.world.attribute.EnvironmentAttribute;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -37,11 +40,6 @@ public final class MapManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(MapManager.class);
     private static final Gson GSON = new Gson();
 
-    private static final DimensionType DIMENSION_TYPE = DimensionType.builder()
-            .hasSkylight(true)
-//            .ambientLight(1.0f)
-            .build();
-
     private static final List<String> ENABLED_MAPS = List.of(
             "city",
             "ruins"
@@ -54,7 +52,16 @@ public final class MapManager {
     private final Map<String, PreLoadedMap> preLoadedMaps;
 
     public MapManager() {
-        RegistryKey<DimensionType> dimension = MinecraftServer.getDimensionTypeRegistry().register("emortalmc:parkourtag", DIMENSION_TYPE);
+        DimensionType overworld = MinecraftServer.getDimensionTypeRegistry().get(DimensionType.OVERWORLD);
+
+        DimensionType dimensionType = DimensionType.builder()
+                .timelines(overworld.timelines())
+                .setAttribute(EnvironmentAttribute.CLOUD_COLOR, ShadowColor.fromHexString("#ccffffff"))
+                .setAttribute(EnvironmentAttribute.FOG_COLOR, new Color(0xc0d8ff))
+                .setAttribute(EnvironmentAttribute.SKY_COLOR, new Color(0x78a7ff))
+                .build();
+
+        RegistryKey<DimensionType> dimension = MinecraftServer.getDimensionTypeRegistry().register("emortalmc:parkourtag", dimensionType);
 
         Map<String, PreLoadedMap> maps = new HashMap<>();
         for (String mapName : ENABLED_MAPS) {
